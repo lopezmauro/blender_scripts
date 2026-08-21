@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "custom_autorig_tools"
+name = "AutoRig Tools & Runtime"
+version = "1.0.0"
+tagline = "Modular autorig generation and animation runtime tools"
+maintainer = "Your Name"
+type = "add-on"
+
+# Supported Blender versions
+blender_version_min = "4.2.0"
+
+# Where tools appear in the interface
+tags = ["Rigging", "Animation"]
