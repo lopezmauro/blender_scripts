@@ -1,0 +1,872 @@
+{
+  "rig_name": "Biped_Character_Rig",
+  "components": [
+    {
+      "type": "Root",
+      "name": "root",
+      "params": {
+        "deform_bone": "root"
+      }
+    },
+    {
+      "type": "FKChain",
+      "name": "pelvis",
+      "params": {
+        "deform_chain": ["pelvis"],
+        "parent_socket": "root.main",
+        "collection": "CTRL_Spine",
+        "widget_shape": "Box",
+        "widget_scale": 1.2
+      }
+    },
+    {
+      "type": "FKChain",
+      "name": "spine",
+      "params": {
+        "deform_chain": ["spine01", "spine02", "spine03", "chest"],
+        "parent_socket": "root.main",
+        "collection": "CTRL_Spine",
+        "widget_shape": "Circle",
+        "widget_scale": 1.0
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "tail_root",
+      "params": {
+        "targets": ["tailRoot"],
+        "parent_socket": "spine.segment_00",
+        "prefix": "CTRL_",
+        "collection": "CTRL_Tail_Ears",
+        "widget_shape": "Circle",
+        "widget_scale": 0.35
+      }
+    },
+    {
+      "type": "MacroChain",
+      "name": "tail",
+      "params": {
+        "chains": {
+          "tail": ["tail01", "tail02", "tail03", "tail04"]
+        },
+        "parent_socket": "tail_root.tailRoot",
+        "collection": "CTRL_Tail_Ears"
+      }
+    },
+    {
+      "type": "FKChain",
+      "name": "neck_head",
+      "params": {
+        "deform_chain": ["neck01", "neck02", "head"],
+        "parent_socket": "spine.tip",
+        "collection": "CTRL_Spine",
+        "widget_shape": "Circle",
+        "widget_scale": 0.7,
+        "enable_isolate_rotation": true,
+        "isolate_target": "root.main"
+      }
+    },
+    {
+      "type": "FKChain",
+      "name": "upHead",
+      "params": {
+        "deform_chain": ["upHead"],
+        "parent_socket": "neck_head.tip",
+        "collection": "CTRL_Spine",
+        "widget_shape": "Circle",
+        "widget_scale": 0.6
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "ear_roots",
+      "params": {
+        "targets": ["earRoot.L", "earRoot.R"],
+        "parent_socket": "upHead.tip",
+        "prefix": "CTRL_",
+        "collection": "CTRL_Tail_Ears",
+        "widget_shape": "Circle",
+        "widget_scale": 0.3
+      }
+    },
+    {
+      "type": "MacroChain",
+      "name": "Ears_L",
+      "params": {
+        "chains": {
+          "ear": ["ear01.L", "ear02.L", "ear03.L", "ear04.L"]
+        },
+        "parent_socket": "ear_roots.earRoot.L",
+        "collection": "CTRL_Tail_Ears",
+        "side_mult": 1.0
+      }
+    },
+    {
+      "type": "MacroChain",
+      "name": "Ears_R",
+      "params": {
+        "chains": {
+          "ear": ["ear01.R", "ear02.R", "ear03.R", "ear04.R"]
+        },
+        "parent_socket": "ear_roots.earRoot.R",
+        "collection": "CTRL_Tail_Ears",
+        "side_mult": -1.0
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "hair_clumps",
+      "params": {
+        "targets": [
+          "hairclump_low.L", "hairclump_low.R",
+          "hairclump_mid.L", "hairclump_mid.R",
+          "hairclump_top.L", "hairclump_top.R"
+        ],
+        "parent_socket": "upHead.tip",
+        "prefix": "CTRL_",
+        "collection": "CTRL_Spine",
+        "widget_shape": "Circle",
+        "widget_scale": 0.2
+      }
+    },
+    {
+      "type": "Limb",
+      "name": "Arm_L",
+      "params": {
+        "limb_type": "Arm",
+        "deform_chain": ["upperarm.L", "lowerarm.L", "hand.L"],
+        "collar_bone": "clavicle.L",
+        "parent_socket": "spine.tip",
+        "root_socket": "root.main",
+        "side": ".L"
+      }
+    },
+    {
+      "type": "Limb",
+      "name": "Arm_R",
+      "params": {
+        "limb_type": "Arm",
+        "deform_chain": ["upperarm.R", "lowerarm.R", "hand.R"],
+        "collar_bone": "clavicle.R",
+        "parent_socket": "spine.tip",
+        "root_socket": "root.main",
+        "side": ".R"
+      }
+    },
+    {
+      "type": "Limb",
+      "name": "Leg_L",
+      "params": {
+        "limb_type": "Leg",
+        "deform_chain": ["thigh.L", "calf.L", "foot.L"],
+        "collar_bone": "hip.L",
+        "ball_bone": "ball.L",
+        "has_reverse_foot": true,
+        "parent_socket": "pelvis.tip",
+        "root_socket": "root.main",
+        "side": ".L"
+      }
+    },
+    {
+      "type": "Limb",
+      "name": "Leg_R",
+      "params": {
+        "limb_type": "Leg",
+        "deform_chain": ["thigh.R", "calf.R", "foot.R"],
+        "collar_bone": "hip.R",
+        "ball_bone": "ball.R",
+        "has_reverse_foot": true,
+        "parent_socket": "pelvis.tip",
+        "root_socket": "root.main",
+        "side": ".R"
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "Metas_L",
+      "params": {
+        "targets": ["indexFingerMeta.L", "middleFingerMeta.L", "pinkyFingerMeta.L"],
+        "parent_socket": "Arm_L.hand_socket",
+        "prefix": "CTRL_",
+        "collection": "CTRL_Fingers",
+        "widget_shape": "Circle",
+        "widget_scale": 0.25
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "Metas_R",
+      "params": {
+        "targets": ["indexFingerMeta.R", "middleFingerMeta.R", "pinkyFingerMeta.R"],
+        "parent_socket": "Arm_R.hand_socket",
+        "prefix": "CTRL_",
+        "collection": "CTRL_Fingers",
+        "widget_shape": "Circle",
+        "widget_scale": 0.25
+      }
+    },
+    {
+      "type": "MacroChain",
+      "name": "Fingers_L",
+      "params": {
+        "chains": {
+          "thumb": ["thumbFinger01.L", "thumbFinger02.L", "thumbFinger03.L", "thumbFinger04.L"],
+          "index": ["indexFinger01.L", "indexFinger02.L", "indexFinger03.L", "indexFinger04.L"],
+          "middle": ["middleFinger01.L", "middleFinger02.L", "middleFinger03.L", "middleFinger04.L"],
+          "pinky": ["pinkyFinger01.L", "pinkyFinger02.L", "pinkyFinger03.L", "pinkyFinger04.L"]
+        },
+        "parent_socket": "Arm_L.hand_socket",
+        "parent_sockets": {
+          "thumb": "Arm_L.hand_socket",
+          "index": "Metas_L.indexFingerMeta.L",
+          "middle": "Metas_L.middleFingerMeta.L",
+          "pinky": "Metas_L.pinkyFingerMeta.L"
+        },
+        "settings_bone": "Arm_L.settings",
+        "collection": "CTRL_Fingers",
+        "side_mult": 1.0,
+        "rules": {
+          "thumb": {"fist_curl": 1.0, "fist_twist": -1.0, "fist_spread": 1.5},
+          "index": {"fist_curl": 1.3, "fist_twist": 0.1, "spread_factor": -0.35},
+          "middle": {"fist_curl": 1.2, "fist_twist": 0.0},
+          "pinky": {"fist_curl": 1.3, "fist_twist": -0.15, "spread_factor": 0.35}
+        }
+      }
+    },
+    {
+      "type": "MacroChain",
+      "name": "Fingers_R",
+      "params": {
+        "chains": {
+          "thumb": ["thumbFinger01.R", "thumbFinger02.R", "thumbFinger03.R", "thumbFinger04.R"],
+          "index": ["indexFinger01.R", "indexFinger02.R", "indexFinger03.R", "indexFinger04.R"],
+          "middle": ["middleFinger01.R", "middleFinger02.R", "middleFinger03.R", "middleFinger04.R"],
+          "pinky": ["pinkyFinger01.R", "pinkyFinger02.R", "pinkyFinger03.R", "pinkyFinger04.R"]
+        },
+        "parent_socket": "Arm_R.hand_socket",
+        "parent_sockets": {
+          "thumb": "Arm_R.hand_socket",
+          "index": "Metas_R.indexFingerMeta.R",
+          "middle": "Metas_R.middleFingerMeta.R",
+          "pinky": "Metas_R.pinkyFingerMeta.R"
+        },
+        "settings_bone": "Arm_R.settings",
+        "collection": "CTRL_Fingers",
+        "side_mult": -1.0,
+        "rules": {
+          "thumb": {"fist_curl": 1.0, "fist_twist": -1.0, "fist_spread": 1.5},
+          "index": {"fist_curl": 1.3, "fist_twist": 0.1, "spread_factor": -0.35},
+          "middle": {"fist_curl": 1.2, "fist_twist": 0.0},
+          "pinky": {"fist_curl": 1.3, "fist_twist": -0.15, "spread_factor": 0.35}
+        }
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "face_settings",
+      "params": {
+        "targets": ["upHead"],
+        "parent_socket": "neck_head.tip",
+        "custom_ctrl_name": "CTRL_Settings_Face",
+        "collection": "CTRL_Face",
+        "widget_shape": "Gear",
+        "widget_scale": 0.35
+      }
+    },
+    {
+      "type": "FKChain",
+      "name": "jaw",
+      "params": {
+        "deform_chain": ["jaw01", "jaw02"],
+        "parent_socket": "neck_head.tip",
+        "collection": "CTRL_Face",
+        "widget_shape": "Box",
+        "widget_scale": 0.18
+      }
+    },
+    {
+      "type": "AimEyes",
+      "name": "eyes",
+      "params": {
+        "eyes": {
+          "L": "eye.L",
+          "R": "eye.R"
+        },
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face"
+      }
+    },
+    {
+      "type": "OrbitalMasters",
+      "name": "orbital_masters_L",
+      "params": {
+        "corner_out": "eyerobital_down_01.L",
+        "corner_in": "eyerobital_down_06.L",
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "side": ".L"
+      }
+    },
+    {
+      "type": "OrbitalMasters",
+      "name": "orbital_masters_R",
+      "params": {
+        "corner_out": "eyerobital_down_01.R",
+        "corner_in": "eyerobital_down_06.R",
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "side": ".R"
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Orbital_Up_L",
+      "params": {
+        "deform_chain": [
+          "eyerobital_up_01.L", "eyerobital_up_02.L", "eyerobital_up_03.L",
+          "eyerobital_up_04.L", "eyerobital_up_05.L", "eyerobital_up_06.L"
+        ],
+        "start_master": "orbital_masters_L.corner_out",
+        "end_master": "orbital_masters_L.corner_in",
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "BEZIER",
+        "ctrl_scale": 0.05
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Orbital_Down_L",
+      "params": {
+        "deform_chain": [
+          "eyerobital_down_01.L", "eyerobital_down_02.L", "eyerobital_down_03.L",
+          "eyerobital_down_04.L", "eyerobital_down_05.L", "eyerobital_down_06.L"
+        ],
+        "start_master": "orbital_masters_L.corner_out",
+        "end_master": "orbital_masters_L.corner_in",
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "BEZIER",
+        "ctrl_scale": 0.05
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Orbital_Up_R",
+      "params": {
+        "deform_chain": [
+          "eyerobital_up_01.R", "eyerobital_up_02.R", "eyerobital_up_03.R",
+          "eyerobital_up_04.R", "eyerobital_up_05.R", "eyerobital_up_06.R"
+        ],
+        "start_master": "orbital_masters_R.corner_out",
+        "end_master": "orbital_masters_R.corner_in",
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "BEZIER",
+        "ctrl_scale": 0.05
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Orbital_Down_R",
+      "params": {
+        "deform_chain": [
+          "eyerobital_down_01.R", "eyerobital_down_02.R", "eyerobital_down_03.R",
+          "eyerobital_down_04.R", "eyerobital_down_05.R", "eyerobital_down_06.R"
+        ],
+        "start_master": "orbital_masters_R.corner_out",
+        "end_master": "orbital_masters_R.corner_in",
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "BEZIER",
+        "ctrl_scale": 0.05
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Eyebrow_L",
+      "params": {
+        "deform_chain": ["eyebrow01.L", "eyebrow02.L", "eyebrow03.L", "eyebrow04.L"],
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.07
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Eyebrow_R",
+      "params": {
+        "deform_chain": ["eyebrow01.R", "eyebrow02.R", "eyebrow03.R", "eyebrow04.R"],
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.07
+      }
+    },
+    {
+      "type": "LipMasters",
+      "name": "lip_masters",
+      "params": {
+        "lip_up_center_L": "lip_up01.L",
+        "lip_up_center_R": "lip_up01.R",
+        "lip_down_center_L": "lip_down01.L",
+        "lip_down_center_R": "lip_down01.R",
+        "lip_corner_L": "lip_up04.L",
+        "lip_corner_R": "lip_up04.R",
+        "head_socket": "neck_head.tip",
+        "jaw_socket": "jaw.tip",
+        "collection": "CTRL_Face"
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Lip_Up_L",
+      "params": {
+        "deform_chain": ["lip_up01.L", "lip_up02.L", "lip_up03.L", "lip_up04.L"],
+        "start_master": "lip_masters.up_master",
+        "end_master": "lip_masters.corner_L",
+        "parent_socket": "neck_head.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.084
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Lip_Up_R",
+      "params": {
+        "deform_chain": ["lip_up01.R", "lip_up02.R", "lip_up03.R", "lip_up04.R"],
+        "start_master": "lip_masters.up_master",
+        "end_master": "lip_masters.corner_R",
+        "parent_socket": "neck_head.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.084
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Lip_Down_L",
+      "params": {
+        "deform_chain": ["lip_down01.L", "lip_down02.L", "lip_down03.L", "lip_down04.L"],
+        "start_master": "lip_masters.down_master",
+        "end_master": "lip_masters.corner_L",
+        "parent_socket": "jaw.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.084
+      }
+    },
+    {
+      "type": "SplineIKChain",
+      "name": "Lip_Down_R",
+      "params": {
+        "deform_chain": ["lip_down01.R", "lip_down02.R", "lip_down03.R", "lip_down04.R"],
+        "start_master": "lip_masters.down_master",
+        "end_master": "lip_masters.corner_R",
+        "parent_socket": "jaw.tip",
+        "collection": "CTRL_Face",
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.084
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "cheeks_L",
+      "params": {
+        "targets": [
+          {"deform_bone": "cheek01.L", "mouth_corner_follow": 0.1, "follow_target": "lip_masters.corner_L"},
+          {"deform_bone": "cheek02.L", "mouth_corner_follow": 0.2, "follow_target": "lip_masters.corner_L"},
+          {"deform_bone": "cheek03.L", "mouth_corner_follow": 0.3, "follow_target": "lip_masters.corner_L"}
+        ],
+        "parent_socket": "upHead.tip",
+        "widget_shape": "Sphere",
+        "widget_scale": 0.09,
+        "collection": "CTRL_Face"
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "cheeks_R",
+      "params": {
+        "targets": [
+          {"deform_bone": "cheek01.R", "mouth_corner_follow": 0.1, "follow_target": "lip_masters.corner_R"},
+          {"deform_bone": "cheek02.R", "mouth_corner_follow": 0.2, "follow_target": "lip_masters.corner_R"},
+          {"deform_bone": "cheek03.R", "mouth_corner_follow": 0.3, "follow_target": "lip_masters.corner_R"}
+        ],
+        "parent_socket": "upHead.tip",
+        "widget_shape": "Sphere",
+        "widget_scale": 0.09,
+        "collection": "CTRL_Face"
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "nose_tweakers",
+      "params": {
+        "targets": ["nose01", "nose02", "nose03", "nose04"],
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "widget_shape": "Sphere",
+        "widget_scale": 0.09
+      }
+    }
+  ],
+  "drivers": [
+    {
+      "name": "Blink_L",
+      "source": {"bone": "eyes.master", "prop": "Blink_L", "min": 1.0, "max": 0.0, "default": 1.0},
+      "drivens": [
+        {"bone": "up_eyelid.L", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "up_eyelid.L", "channel": "location", "index": 0, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "up_eyelid.L", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "low_eyelid.L", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "low_eyelid.L", "channel": "location", "index": 0, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "low_eyelid.L", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35}
+      ]
+    },
+    {
+      "name": "Blink_R",
+      "source": {"bone": "eyes.master", "prop": "Blink_R", "min": 1.0, "max": 0.0, "default": 1.0},
+      "drivens": [
+        {"bone": "up_eyelid.R", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "up_eyelid.R", "channel": "location", "index": 0, "rest": 0.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "up_eyelid.R", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "low_eyelid.R", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "low_eyelid.R", "channel": "location", "index": 0, "rest": 0.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "low_eyelid.R", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Mouth_Master",
+      "source": {"bone": "face_settings.upHead", "prop": "Mouth_Master", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "lip_masters.up_master", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "lip_masters.up_master", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "lip_masters.up_master", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "lip_masters.down_master", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "lip_masters.down_master", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "lip_masters.down_master", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "lip_masters.corner_L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "lip_masters.corner_L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "lip_masters.corner_L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "lip_masters.corner_R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "lip_masters.corner_R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "lip_masters.corner_R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "Lip_Up_L.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Up_L.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Up_L.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Up_R.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Up_R.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Up_R.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Down_L.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Down_L.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Down_L.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Down_R.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Down_R.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.1, "curve": "linear"},
+        {"bone": "Lip_Down_R.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.1, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Mouth_Detail",
+      "source": {"bone": "face_settings.upHead", "prop": "Mouth_Detail", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "Lip_Up_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Up_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Lip_Down_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Orbitals_Master",
+      "source": {"bone": "face_settings.upHead", "prop": "Orbitals_Master", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "orbital_masters_L.corner_out", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_L.corner_out", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_L.corner_out", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_L.corner_in", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_L.corner_in", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_L.corner_in", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_R.corner_out", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_R.corner_out", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_R.corner_out", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_R.corner_in", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_R.corner_in", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "orbital_masters_R.corner_in", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.08, "curve": "linear"},
+        {"bone": "Orbital_Up_L.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Up_L.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Up_L.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Down_L.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Down_L.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Down_L.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Up_R.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Up_R.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Up_R.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Down_R.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Down_R.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.06, "curve": "linear"},
+        {"bone": "Orbital_Down_R.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.06, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Orbitals_Detail",
+      "source": {"bone": "face_settings.upHead", "prop": "Orbitals_Detail", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "Orbital_Up_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_04", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_04", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_04", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_05", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_05", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_L.detail_05", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_04", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_04", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_04", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_05", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_05", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_L.detail_05", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_04", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_04", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_04", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_05", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_05", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Up_R.detail_05", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_04", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_04", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_04", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_05", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_05", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.05, "curve": "linear"},
+        {"bone": "Orbital_Down_R.detail_05", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.05, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Eyebrows_Master",
+      "source": {"bone": "face_settings.upHead", "prop": "Eyebrows_Master", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "Eyebrow_L.start", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.start", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.start", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.end", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.end", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_L.end", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.start", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.start", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.start", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.mid", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.mid", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.mid", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.end", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.end", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.084, "curve": "linear"},
+        {"bone": "Eyebrow_R.end", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.084, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Eyebrows_Detail",
+      "source": {"bone": "face_settings.upHead", "prop": "Eyebrows_Detail", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "Eyebrow_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_L.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_00", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.07, "curve": "linear"},
+        {"bone": "Eyebrow_R.detail_03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.07, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Ears",
+      "source": {"bone": "face_settings.upHead", "prop": "Ears", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "ear_roots.earRoot.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.earRoot.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.earRoot.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.earRoot.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.earRoot.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.earRoot.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "Ears_L.settings", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.35, "curve": "linear"},
+        {"bone": "Ears_L.settings", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.35, "curve": "linear"},
+        {"bone": "Ears_L.settings", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.35, "curve": "linear"},
+        {"bone": "Ears_R.settings", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.35, "curve": "linear"},
+        {"bone": "Ears_R.settings", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.35, "curve": "linear"},
+        {"bone": "Ears_R.settings", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.35, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Cheeks",
+      "source": {"bone": "face_settings.upHead", "prop": "Cheeks", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "cheeks_L.cheek01.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek01.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek01.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek02.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek02.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek02.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek03.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek03.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_L.cheek03.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek01.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek01.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek01.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek02.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek02.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek02.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek03.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek03.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "cheeks_R.cheek03.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Nose",
+      "source": {"bone": "face_settings.upHead", "prop": "Nose", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "nose_tweakers.nose01", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose01", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose01", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose02", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose02", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose02", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose03", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose03", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose03", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose04", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose04", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.09, "curve": "linear"},
+        {"bone": "nose_tweakers.nose04", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.09, "curve": "linear"}
+      ]
+    },
+    {
+      "name": "Face_Visibility_Hairclumps",
+      "source": {"bone": "face_settings.upHead", "prop": "Hairclumps", "min": 0.0, "max": 1.0, "default": 1.0},
+      "drivens": [
+        {"bone": "hair_clumps.hairclump_low.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_low.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_low.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_low.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_low.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_low.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_mid.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_mid.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_mid.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_mid.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_mid.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_mid.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_top.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_top.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_top.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_top.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_top.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.2, "curve": "linear"},
+        {"bone": "hair_clumps.hairclump_top.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.2, "curve": "linear"}
+      ]
+    }
+  ]
+}
