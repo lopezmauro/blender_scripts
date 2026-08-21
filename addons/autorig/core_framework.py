@@ -100,6 +100,10 @@ def create_bone(armature_obj, bone_name, head, tail, roll=0.0, parent_name=None,
         bpy.ops.object.mode_set(mode='EDIT')
 
     edit_bones = armature_obj.data.edit_bones
+    # If the bone already exists from a previous generation run, remove it to prevent .001
+    if bone_name in edit_bones:
+        edit_bones.remove(edit_bones[bone_name])
+
     eb = edit_bones.new(bone_name)
     eb.head = mathutils.Vector(head)
     eb.tail = mathutils.Vector(tail)
@@ -124,7 +128,7 @@ def duplicate_bone(armature_obj, source_name, new_name, collection_name=None, us
 
     edit_bones = armature_obj.data.edit_bones
     resolved_source = find_bone_name(armature_obj, source_name)
-    if not resolved_source:
+    if not resolved_source or resolved_source not in edit_bones:
         raise KeyError(f"Source bone '{source_name}' not found.")
 
     src = edit_bones[resolved_source]

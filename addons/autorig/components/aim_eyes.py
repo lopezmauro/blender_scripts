@@ -46,6 +46,7 @@ class AimEyesComponent(base_component.BaseRigComponent):
         )
         self.ctrl_aim_master = ctrl_aim_master
         self.register_output("master", ctrl_aim_master)
+        self.register_control(ctrl_aim_master)
 
         # 2. Individual Locators
         for key, (def_name, loc_pos) in aim_positions.items():
@@ -56,10 +57,16 @@ class AimEyesComponent(base_component.BaseRigComponent):
             )
             self.eye_bindings[key] = {"def": def_name, "aim": ctrl_aim_locator}
             self.register_output(f"aim_{key}", ctrl_aim_locator)
+            self.register_control(ctrl_aim_locator)
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones
         shapes = self.context.shapes
+
+        if self.ctrl_aim_master:
+            for ctrl_name in self.controls:
+                if ctrl_name in pose_bones and ctrl_name != self.ctrl_aim_master:
+                    pose_bones[ctrl_name]["_settings_bone"] = self.ctrl_aim_master
 
         # Assign master shape
         core_framework.assign_bone_shape(

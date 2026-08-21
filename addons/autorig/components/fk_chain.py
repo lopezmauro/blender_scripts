@@ -29,6 +29,9 @@ class FKChainComponent(base_component.BaseRigComponent):
         self.ctrl_bones = systems_framework.build_fk_chain(
             self.armature_obj, raw_chain, prefix, collection, parent_socket
         )
+        for bone in self.ctrl_bones:
+            self.register_control(bone)
+            
         self.deform_chain = [core_framework.find_bone_name(self.armature_obj, b) for b in raw_chain]
 
         # Expose sockets

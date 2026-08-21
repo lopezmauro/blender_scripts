@@ -45,6 +45,7 @@ class MacroChainComponent(base_component.BaseRigComponent):
                     self.armature_obj, resolved_def, ctrl_name,
                     collection_name=collection, parent_name=created_mch, use_deform=False
                 )
+                self.register_control(created_ctrl)
                 ctrl_bones.append(created_ctrl)
                 mch_bones.append(created_mch)
                 def_bones.append(resolved_def)
@@ -62,6 +63,9 @@ class MacroChainComponent(base_component.BaseRigComponent):
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones
         p_settings = pose_bones[self.settings_bone_name]
+        for ctrl_name in self.controls:
+            if ctrl_name in pose_bones and ctrl_name != self.settings_bone_name:
+                pose_bones[ctrl_name]["_settings_bone"] = self.settings_bone_name
         shapes = self.context.shapes
         side_mult = self.params.get("side_mult", 1.0)
         rules = self.params.get("rules", {})

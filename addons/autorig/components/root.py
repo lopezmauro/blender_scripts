@@ -29,6 +29,7 @@ class RootComponent(base_component.BaseRigComponent):
             )
 
         self.register_output("main", ctrl_root)
+        self.register_control(ctrl_root)
         self.deform_bone = resolved
 
     def build_pose(self) -> None:

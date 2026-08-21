@@ -73,6 +73,10 @@ class LipMastersComponent(base_component.BaseRigComponent):
         self.register_output("down_master", ctrl_lip_down)
         self.register_output("corner_L", corners[".L"]["ctrl"])
         self.register_output("corner_R", corners[".R"]["ctrl"])
+        self.register_control(ctrl_lip_up)
+        self.register_control(ctrl_lip_down)
+        self.register_control(corners[".L"]["ctrl"])
+        self.register_control(corners[".R"]["ctrl"])
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones

@@ -65,8 +65,10 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                     "def": def_name, "ctrl": created_ctrl, "mch": None, "follow": None
                 })
             self.register_output(def_name, created_ctrl)
+            self.register_control(created_ctrl)
             if explicit_ctrl_name:
                 self.register_output("main", created_ctrl)
+                
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones

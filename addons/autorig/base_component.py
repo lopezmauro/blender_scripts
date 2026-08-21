@@ -42,6 +42,19 @@ class BaseRigComponent(abc.ABC):
         self.context: RigContext = context
         self.armature_obj: bpy.types.Object = context.armature_obj
         self.outputs: Dict[str, str] = {}
+        self.edit_data = {}
+        self._controls: List[str] = []
+
+    @property
+    def controls(self) -> List[str]:
+        """Returns the list of animation control bone names created by this component."""
+        return list(dict.fromkeys(self._controls))
+
+    def register_control(self, bone_name: Optional[str]) -> Optional[str]:
+        """Registers a bone name as an animation control."""
+        if bone_name and bone_name not in self._controls:
+            self._controls.append(bone_name)
+        return bone_name
 
     def register_output(self, key: str, bone_name: str) -> None:
         self.outputs[key] = bone_name

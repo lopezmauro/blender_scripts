@@ -165,6 +165,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
                 tail=edit_bones[def_chain[0]].head.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
             )
+            self.register_control(start_master)
 
         if not mid_master:
             mid_idx = len(def_chain) // 2
@@ -174,6 +175,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
                 head=mid_pos, tail=mid_pos + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
             )
+            self.register_control(mid_master)
 
         if not end_master:
             end_master = core_framework.create_bone(
@@ -182,6 +184,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
                 tail=edit_bones[def_chain[-1]].tail.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
             )
+            self.register_control(end_master)
 
         self.master_ctrls = [start_master, mid_master, end_master]
         
@@ -196,13 +199,18 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         self.register_output("tip", self.chain_data["ctrl"][-1])
         for idx, c_b in enumerate(self.chain_data["ctrl"]):
             self.register_output(f"detail_{idx:02d}", c_b)
+            self.register_control(c_b)
 
     def build_pose(self) -> None:
         ctrl_scale = self.params.get("ctrl_scale", 0.08)
         spline_type = self.params.get("spline_type", "NURBS")
         shapes = self.context.shapes
         pose_bones = self.armature_obj.pose.bones
-        
+        settings_bone_name = self.edit_data.get("ctrl_settings")
+        if settings_bone_name:
+            for ctrl_name in self.controls:
+                if ctrl_name in pose_bones and ctrl_name != settings_bone_name:
+                    pose_bones[ctrl_name]["_settings_bone"] = settings_bone_name
         curve_name = f"CURVE_{self.name}"
         self.curve_obj = _create_driven_curve(curve_name, self.master_ctrls, self.armature_obj, spline_type=spline_type)
         

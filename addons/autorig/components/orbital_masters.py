@@ -43,6 +43,8 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
         self.edit_data = {"ctrl_out": ctrl_out, "ctrl_in": ctrl_in}
         self.register_output("corner_out", ctrl_out)
         self.register_output("corner_in", ctrl_in)
+        self.register_control(ctrl_out)
+        self.register_control(ctrl_in)
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones
