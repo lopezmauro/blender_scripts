@@ -1,11 +1,10 @@
 import mathutils
 from typing import List
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent
-from blender_scripts.autorig.base_component import register_component
+from .. import core_framework, base_component
 
-@register_component("AimEyes")
-class AimEyesComponent(BaseRigComponent):
+
+@base_component.register_component("AimEyes")
+class AimEyesComponent(base_component.BaseRigComponent):
     """
     Binocular/Multi-eye Aim tracking setup.
     Creates individual eye aim targets parented under a master aim controller.

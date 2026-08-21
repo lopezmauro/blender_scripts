@@ -1,9 +1,7 @@
 import math
 import mathutils
 from typing import List
-from blender_scripts.autorig import core_framework, systems_framework
-from blender_scripts.autorig.base_component import BaseRigComponent
-from blender_scripts.autorig.base_component import register_component
+from .. import core_framework, systems_framework, base_component
 
 
 def solve_blender_pole_angle(arm_obj, base_bone_name, pole_target_name):
@@ -37,8 +35,8 @@ def solve_blender_pole_angle(arm_obj, base_bone_name, pole_target_name):
     return angle
 
 
-@register_component("Limb")
-class LimbComponent(BaseRigComponent):
+@base_component.register_component("Limb")
+class LimbComponent(base_component.BaseRigComponent):
     """
     Full stretchy limb with dedicated tweak controls, isolated scale inheritance,
     and STRETCH_TO deform bones (Joey C-quel technique).
@@ -194,6 +192,8 @@ class LimbComponent(BaseRigComponent):
             "rf_pivots": rf_pivots, "mch_ik_ball": mch_ik_ball,
             "total_chain_len": total_chain_len, "has_foot": has_foot
         }
+
+        
         self.register_output("settings", ctrl_settings)
         self.register_output("ik_target", ctrl_ik_target)
         self.register_output("pole", ctrl_pole)
@@ -205,12 +205,13 @@ class LimbComponent(BaseRigComponent):
         shapes = self.context.shapes
         ik_endpoint = d["rf_pivots"][7] if d["has_foot"] else d["ctrl_ik_target"]
         ik_subtarget = d["rf_pivots"][8] if d["has_foot"] else d["ctrl_ik_target"]
-
+        chain_controls = list()
         p_set = pose_bones[d["ctrl_settings"]]
 
         # 1. Register UI properties
         core_framework.create_custom_property(p_set, "IK_FK", default=1.0, min_val=0.0, max_val=1.0)
         core_framework.create_custom_property(p_set, "Stretch", default=0.0, min_val=0.0, max_val=1.0)
+        core_framework.create_custom_property(p_set, "Show_Tweaks", default=0.0, min_val=0.0, max_val=1.0)
 
         if d["has_foot"] and d["rf_pivots"]:
             core_framework.create_custom_property(p_set, "Foot_Roll", default=0.0, min_val=-10.0, max_val=10.0)
@@ -253,7 +254,7 @@ class LimbComponent(BaseRigComponent):
         for twk in d["ctrl_tweaks"]:
             core_framework.assign_bone_shape(pose_bones[twk], shapes['Sphere'], scale=(0.25, 0.25, 0.25))
 
-        # 6. Dynamic IK/FK Visibility Drivers
+        # 6. Dynamic Visibility Drivers (IK/FK & Tweaks)
         vis_drivers = []
         for ik_ctrl, base_s in [(d["ctrl_ik_target"], 0.8), (d["ctrl_pole"], 0.3)]:
             for a_idx in range(3):
@@ -271,6 +272,13 @@ class LimbComponent(BaseRigComponent):
                 vis_drivers.append({
                     "source": {"bone": d["ctrl_settings"], "prop": "IK_FK", "min": 1.0, "max": 0.0, "default": 1.0},
                     "drivens": [{"bone": fk_ctrl, "channel": "custom_shape_scale_xyz", "index": a_idx, "rest": 0.0, "target": base_s, "curve": "linear"}]
+                })
+
+        for twk_ctrl in d["ctrl_tweaks"]:
+            for a_idx in range(3):
+                vis_drivers.append({
+                    "source": {"bone": d["ctrl_settings"], "prop": "Show_Tweaks", "min": 0.0, "max": 1.0, "default": 0.0},
+                    "drivens": [{"bone": twk_ctrl, "channel": "custom_shape_scale_xyz", "index": a_idx, "rest": 0.0, "target": 0.25, "curve": "linear"}]
                 })
 
         if "drivers" not in self.params:
@@ -309,13 +317,11 @@ class LimbComponent(BaseRigComponent):
         def_l.bone.inherit_scale = 'NONE'
         pose_bones[d["def_chain"][2]].bone.inherit_scale = 'NONE'
 
-        # Upper Deform: Follows Tweak_Upper and stretches to Tweak_Mid
         for c in list(def_u.constraints):
             def_u.constraints.remove(c)
         core_framework.add_constraint(def_u, 'COPY_LOCATION', self.armature_obj, subtarget_bone=twk_u)
         core_framework.add_constraint(def_u, 'STRETCH_TO', self.armature_obj, subtarget_bone=twk_m)
 
-        # Lower Deform: Follows Tweak_Mid and stretches to Tweak_End
         for c in list(def_l.constraints):
             def_l.constraints.remove(c)
         core_framework.add_constraint(def_l, 'COPY_LOCATION', self.armature_obj, subtarget_bone=twk_m)
@@ -324,6 +330,7 @@ class LimbComponent(BaseRigComponent):
         # 10. Reverse Foot Setup
         if d["has_foot"] and d["rf_pivots"]:
             self._setup_foot_mechanics(d)
+
 
     def _setup_foot_mechanics(self, d: dict) -> None:
         pose_bones = self.armature_obj.pose.bones

@@ -1,11 +1,11 @@
 import bpy
 import mathutils
 from typing import List
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent, register_component
+from .. import core_framework, base_component
 
-@register_component("OrbitalMasters")
-class OrbitalMastersComponent(BaseRigComponent):
+
+@base_component.register_component("OrbitalMasters")
+class OrbitalMastersComponent(base_component.BaseRigComponent):
     """
     Creates inner and outer eye orbital master controls.
     """

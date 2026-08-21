@@ -1,11 +1,11 @@
 import bpy
 import mathutils
 from typing import List
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent, register_component
+from .. import core_framework, base_component
 
-@register_component("LipMasters")
-class LipMastersComponent(BaseRigComponent):
+
+@base_component.register_component("LipMasters")
+class LipMastersComponent(base_component.BaseRigComponent):
     """
     Spawns Upper/Lower Lip master controls and Left/Right Mouth Corners with Jaw Follow.
     """

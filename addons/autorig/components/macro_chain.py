@@ -1,10 +1,9 @@
 from typing import List, Dict, Any
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent, register_component
+from .. import core_framework, base_component
 
 
-@register_component("MacroChain")
-class MacroChainComponent(BaseRigComponent):
+@base_component.register_component("MacroChain")
+class MacroChainComponent(base_component.BaseRigComponent):
     """
     Clean alternating hierarchy (MCH -> CTRL -> MCH -> CTRL).
     Generates declarative driver specifications for curls, twists, spreads, and shape scales.

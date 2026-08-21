@@ -1,7 +1,6 @@
 import bpy
 from typing import Dict, Any, Type, List
-from blender_scripts.autorig import core_framework, systems_framework
-from blender_scripts.autorig import base_component
+from . import core_framework, systems_framework, base_component
 
 
 class RigBuilder:

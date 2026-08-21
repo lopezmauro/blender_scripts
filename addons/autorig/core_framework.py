@@ -165,6 +165,15 @@ def create_custom_property(target, prop_name, default=0.0, min_val=0.0, max_val=
         soft_max=max_val,
         description=description
     )
+    
+    # Track creation order
+    if "_prop_order" not in target:
+        target["_prop_order"] = []
+    
+    order_list = list(target["_prop_order"])
+    if prop_name not in order_list:
+        order_list.append(prop_name)
+        target["_prop_order"] = order_list
 
 def add_driver(target_id, target_datapath, source_id, source_prop_path, expression="var", var_name="var", index=-1):
     # Pass index if targeting a specific array element (0, 1, 2)

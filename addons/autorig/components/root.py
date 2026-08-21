@@ -1,12 +1,10 @@
 from typing import List
 import mathutils
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent
-from blender_scripts.autorig.base_component import register_component
+from .. import core_framework, base_component
 
 
-@register_component("Root")
-class RootComponent(BaseRigComponent):
+@base_component.register_component("Root")
+class RootComponent(base_component.BaseRigComponent):
     """Generates the master root control."""
 
     def validate(self) -> List[str]:

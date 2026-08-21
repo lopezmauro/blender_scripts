@@ -1,8 +1,8 @@
 import bpy
 import mathutils
 from typing import List
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent, register_component
+from .. import core_framework, base_component
+
 
 def _create_bone_proxy_empty(proxy_name, armature_obj, bone_name):
     existing = bpy.data.objects.get(proxy_name)
@@ -132,8 +132,8 @@ def _finalize_spline_chain(armature_obj, curve_obj, chain_data, shapes, ctrl_sca
             pose_bones[ctrl_name], shapes['Sphere'], scale=(ctrl_scale, ctrl_scale, ctrl_scale)
         )
 
-@register_component("SplineIKChain")
-class SplineIKChainComponent(BaseRigComponent):
+@base_component.register_component("SplineIKChain")
+class SplineIKChainComponent(base_component.BaseRigComponent):
     """
     Curve-driven Spline IK system connecting master hooks (start/mid/end)
     with intermediate detail FK controls.

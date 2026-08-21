@@ -1,10 +1,9 @@
 from typing import List
-from blender_scripts.autorig import core_framework, systems_framework
-from blender_scripts.autorig.base_component import BaseRigComponent
-from blender_scripts.autorig.base_component import register_component
+from .. import core_framework, systems_framework, base_component
 
-@register_component("FKChain")
-class FKChainComponent(BaseRigComponent):
+
+@base_component.register_component("FKChain")
+class FKChainComponent(base_component.BaseRigComponent):
     """
     Builds an arbitrary-length sequential FK control chain.
     Usable for Spine, Neck, Head, or simple appendage setups.

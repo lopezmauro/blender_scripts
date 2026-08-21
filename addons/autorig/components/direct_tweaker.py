@@ -1,7 +1,5 @@
 from typing import List
-from blender_scripts.autorig import core_framework
-from blender_scripts.autorig.base_component import BaseRigComponent
-from blender_scripts.autorig.base_component import register_component
+from .. import core_framework, base_component
 
 def _build_direct_tweaker(armature_obj, def_name, ctrl_name, parent_name, collection_name):
     return core_framework.duplicate_bone(
@@ -9,8 +7,8 @@ def _build_direct_tweaker(armature_obj, def_name, ctrl_name, parent_name, collec
         collection_name=collection_name, parent_name=parent_name, use_deform=False
     )
 
-@register_component("DirectTweaker")
-class DirectTweakerComponent(BaseRigComponent):
+@base_component.register_component("DirectTweaker")
+class DirectTweakerComponent(base_component.BaseRigComponent):
     """
     Direct Tweaker controls with weighted following against target sockets.
     Supports explicit custom control names via custom_ctrl_name or per-target ctrl_name.

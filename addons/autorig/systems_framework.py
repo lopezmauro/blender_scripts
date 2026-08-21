@@ -2,7 +2,7 @@ import math
 import bpy
 import mathutils
 from typing import Dict, Any, List, Optional
-from blender_scripts.autorig import core_framework
+from . import core_framework
 
 
 def build_fk_chain(armature_obj, deform_chain, prefix, collection_name, parent_name):

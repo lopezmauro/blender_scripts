@@ -1,7 +1,7 @@
 import abc
 import bpy
 from typing import Dict, Any, Optional, List, Type
-from blender_scripts.autorig import core_framework
+from . import core_framework
 
 # --- GLOBAL COMPONENT REGISTRY ---
 COMPONENT_REGISTRY: Dict[str, Type['BaseRigComponent']] = {}
