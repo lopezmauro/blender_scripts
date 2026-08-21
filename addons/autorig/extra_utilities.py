@@ -24,7 +24,6 @@ def force_viewport_update(context):
 # ==============================================================================
 # 1. OPERATORS: SPACE SWITCHING & SNAPPING
 # ==============================================================================
-
 class RIG_OT_switch_space(bpy.types.Operator):
     """Seamlessly switches parent space maintaining current world transform."""
     bl_idname = "rig.switch_space"
