@@ -330,7 +330,7 @@
         "end_master": "orbital_masters_L.corner_in",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
-        "spline_type": "BEZIER",
+        "spline_type": "NURBS",
         "ctrl_scale": 0.05
       }
     },
@@ -346,7 +346,7 @@
         "end_master": "orbital_masters_L.corner_in",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
-        "spline_type": "BEZIER",
+        "spline_type": "NURBS",
         "ctrl_scale": 0.05
       }
     },
@@ -476,9 +476,33 @@
       "name": "cheeks_L",
       "params": {
         "targets": [
-          {"deform_bone": "cheek01.L", "mouth_corner_follow": 0.1, "follow_target": "lip_masters.corner_L"},
-          {"deform_bone": "cheek02.L", "mouth_corner_follow": 0.2, "follow_target": "lip_masters.corner_L"},
-          {"deform_bone": "cheek03.L", "mouth_corner_follow": 0.3, "follow_target": "lip_masters.corner_L"}
+          {
+            "deform_bone": "cheek01.L",
+            "mouth_corner_follow": 0.2,
+            "follow_target": "lip_masters.corner_L",
+            "aim_target": true,
+            "aim_influence": 0.5,
+            "aim_type": "DAMPED_TRACK",
+            "track_axis": "TRACK_Y"
+          },
+          {
+            "deform_bone": "cheek02.L",
+            "mouth_corner_follow": 0.5,
+            "follow_target": "lip_masters.corner_L",
+            "aim_target": true,
+            "aim_influence": 0.5,
+            "aim_type": "DAMPED_TRACK",
+            "track_axis": "TRACK_Y"
+          },
+          {
+            "deform_bone": "cheek03.L",
+            "mouth_corner_follow": 0.7,
+            "follow_target": "lip_masters.corner_L",
+            "aim_target": true,
+            "aim_influence": 1.0,
+            "aim_type": "DAMPED_TRACK",
+            "track_axis": "TRACK_Y"
+          }
         ],
         "parent_socket": "upHead.tip",
         "widget_shape": "Sphere",
@@ -486,30 +510,43 @@
         "collection": "CTRL_Face"
       }
     },
-    {
+        {
       "type": "DirectTweaker",
       "name": "cheeks_R",
       "params": {
         "targets": [
-          {"deform_bone": "cheek01.R", "mouth_corner_follow": 0.1, "follow_target": "lip_masters.corner_R"},
-          {"deform_bone": "cheek02.R", "mouth_corner_follow": 0.2, "follow_target": "lip_masters.corner_R"},
-          {"deform_bone": "cheek03.R", "mouth_corner_follow": 0.3, "follow_target": "lip_masters.corner_R"}
+          {
+            "deform_bone": "cheek01.R",
+            "mouth_corner_follow": 0.2,
+            "follow_target": "lip_masters.corner_R",
+            "aim_target": true,
+            "aim_influence": 0.5,
+            "aim_type": "DAMPED_TRACK",
+            "track_axis": "TRACK_Y"
+          },
+          {
+            "deform_bone": "cheek02.R",
+            "mouth_corner_follow": 0.5,
+            "follow_target": "lip_masters.corner_R",
+            "aim_target": true,
+            "aim_influence": 0.5,
+            "aim_type": "DAMPED_TRACK",
+            "track_axis": "TRACK_Y"
+          },
+          {
+            "deform_bone": "cheek03.R",
+            "mouth_corner_follow": 0.7,
+            "follow_target": "lip_masters.corner_R",
+            "aim_target": true,
+            "aim_influence": 1.0,
+            "aim_type": "DAMPED_TRACK",
+            "track_axis": "TRACK_Y"
+          }
         ],
         "parent_socket": "upHead.tip",
         "widget_shape": "Sphere",
         "widget_scale": 0.09,
         "collection": "CTRL_Face"
-      }
-    },
-    {
-      "type": "DirectTweaker",
-      "name": "nose_tweakers",
-      "params": {
-        "targets": ["nose01", "nose02", "nose03", "nose04"],
-        "parent_socket": "upHead.tip",
-        "collection": "CTRL_Face",
-        "widget_shape": "Sphere",
-        "widget_scale": 0.09
       }
     }
   ],

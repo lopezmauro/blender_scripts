@@ -19,65 +19,130 @@ def _create_bone_proxy_empty(proxy_name, armature_obj, bone_name):
     con.subtarget = bone_name
     return empty
 
-def _create_driven_curve(curve_name, control_bone_names, armature_obj, spline_type="NURBS"):
+def _create_cubic_nurbs_curve(curve_name, control_bone_names, armature_obj, mid_ctrl_name=None):
+    """
+    Builds a 5-point Cubic (order 4) NURBS curve with blended tangent drivers.
+    Interpolates rest curvature cleanly while providing wide falloff propagation.
+    """
     existing = bpy.data.objects.get(curve_name)
     if existing:
         return existing
-    
+
+    # Master bone proxies: [Start, Mid, End]
     proxies = [
         _create_bone_proxy_empty(f"PROXY_{curve_name}_{idx:02d}", armature_obj, bone_name)
         for idx, bone_name in enumerate(control_bone_names)
     ]
-    
+
     curve_data = bpy.data.curves.new(curve_name, type='CURVE')
     curve_data.dimensions = '3D'
+    spline = curve_data.splines.new('NURBS')
     
-    if spline_type.upper() == 'BEZIER':
-        spline = curve_data.splines.new('BEZIER')
-        spline.bezier_points.add(len(proxies) - 1)
-        arm_data = armature_obj.data
-        for idx, proxy in enumerate(proxies):
-            bp = spline.bezier_points[idx]
-            bp.handle_left_type = 'AUTO'
-            bp.handle_right_type = 'AUTO'
-            b_name = control_bone_names[idx]
-            if b_name in arm_data.bones:
-                rest_pos = armature_obj.matrix_world @ arm_data.bones[b_name].head_local
-                bp.co = rest_pos
-                bp.handle_left = rest_pos
-                bp.handle_right = rest_pos
-            for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
-                fcurve = bp.driver_add("co", axis_idx)
-                drv = fcurve.driver
-                drv.type = 'SCRIPTED'
-                drv.expression = "val"
-                var = drv.variables.new()
-                var.name = "val"
-                var.type = 'TRANSFORMS'
-                target = var.targets[0]
-                target.id = proxy
-                target.transform_type = transform_type
-                target.transform_space = 'WORLD_SPACE'
-    else:
-        spline = curve_data.splines.new('NURBS')
-        spline.points.add(len(proxies) - 1)
-        spline.use_endpoint_u = True
-        spline.order_u = min(3, len(proxies))
-        for idx, proxy in enumerate(proxies):
-            point = spline.points[idx]
-            point.co[3] = 1.0
-            for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
-                fcurve = point.driver_add("co", axis_idx)
-                drv = fcurve.driver
-                drv.type = 'SCRIPTED'
-                drv.expression = "val"
-                var = drv.variables.new()
-                var.name = "val"
-                var.type = 'TRANSFORMS'
-                target = var.targets[0]
-                target.id = proxy
-                target.transform_type = transform_type
-                target.transform_space = 'WORLD_SPACE'
+    # 5 CV points for cubic curve: [0: Start, 1: Tangent_In, 2: Mid, 3: Tangent_Out, 4: End]
+    spline.points.add(4)
+    spline.use_endpoint_u = True
+    spline.order_u = 4
+
+    p_start, p_mid, p_end = proxies[0], proxies[1], proxies[2]
+
+    # Initialize weights
+    for pt in spline.points:
+        pt.co[3] = 1.0
+
+    # 1. Drive Point 0 (Start) directly from Start Proxy
+    for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
+        fc = spline.points[0].driver_add("co", axis_idx)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        drv.expression = "val"
+        var = drv.variables.new()
+        var.name = "val"
+        var.type = 'TRANSFORMS'
+        var.targets[0].id = p_start
+        var.targets[0].transform_type = transform_type
+        var.targets[0].transform_space = 'WORLD_SPACE'
+
+    # 2. Drive Point 1 (Tangent In: Blend between Start and Mid with Falloff)
+    for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
+        fc = spline.points[1].driver_add("co", axis_idx)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        drv.expression = "start_loc + (mid_loc - start_loc) * (0.5 * falloff)"
+
+        v_s = drv.variables.new()
+        v_s.name = "start_loc"
+        v_s.type = 'TRANSFORMS'
+        v_s.targets[0].id = p_start
+        v_s.targets[0].transform_type = transform_type
+        v_s.targets[0].transform_space = 'WORLD_SPACE'
+
+        v_m = drv.variables.new()
+        v_m.name = "mid_loc"
+        v_m.type = 'TRANSFORMS'
+        v_m.targets[0].id = p_mid
+        v_m.targets[0].transform_type = transform_type
+        v_m.targets[0].transform_space = 'WORLD_SPACE'
+
+        v_f = drv.variables.new()
+        v_f.name = "falloff"
+        v_f.type = 'SINGLE_PROP'
+        v_f.targets[0].id_type = 'OBJECT'
+        v_f.targets[0].id = armature_obj
+        v_f.targets[0].data_path = f'pose.bones["{mid_ctrl_name}"]["Falloff"]'
+
+    # 3. Drive Point 2 (Mid) directly from Mid Proxy
+    for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
+        fc = spline.points[2].driver_add("co", axis_idx)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        drv.expression = "val"
+        var = drv.variables.new()
+        var.name = "val"
+        var.type = 'TRANSFORMS'
+        var.targets[0].id = p_mid
+        var.targets[0].transform_type = transform_type
+        var.targets[0].transform_space = 'WORLD_SPACE'
+
+    # 4. Drive Point 3 (Tangent Out: Blend between End and Mid with Falloff)
+    for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
+        fc = spline.points[3].driver_add("co", axis_idx)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        drv.expression = "end_loc + (mid_loc - end_loc) * (0.5 * falloff)"
+
+        v_e = drv.variables.new()
+        v_e.name = "end_loc"
+        v_e.type = 'TRANSFORMS'
+        v_e.targets[0].id = p_end
+        v_e.targets[0].transform_type = transform_type
+        v_e.targets[0].transform_space = 'WORLD_SPACE'
+
+        v_m = drv.variables.new()
+        v_m.name = "mid_loc"
+        v_m.type = 'TRANSFORMS'
+        v_m.targets[0].id = p_mid
+        v_m.targets[0].transform_type = transform_type
+        v_m.targets[0].transform_space = 'WORLD_SPACE'
+
+        v_f = drv.variables.new()
+        v_f.name = "falloff"
+        v_f.type = 'SINGLE_PROP'
+        v_f.targets[0].id_type = 'OBJECT'
+        v_f.targets[0].id = armature_obj
+        v_f.targets[0].data_path = f'pose.bones["{mid_ctrl_name}"]["Falloff"]'
+
+    # 5. Drive Point 4 (End) directly from End Proxy
+    for axis_idx, transform_type in enumerate(('LOC_X', 'LOC_Y', 'LOC_Z')):
+        fc = spline.points[4].driver_add("co", axis_idx)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        drv.expression = "val"
+        var = drv.variables.new()
+        var.name = "val"
+        var.type = 'TRANSFORMS'
+        var.targets[0].id = p_end
+        var.targets[0].transform_type = transform_type
+        var.targets[0].transform_space = 'WORLD_SPACE'
 
     curve_obj = bpy.data.objects.new(curve_name, curve_data)
     wgt_col = core_framework.get_or_create_widget_collection()
@@ -120,8 +185,8 @@ def _finalize_spline_chain(armature_obj, curve_obj, chain_data, shapes, ctrl_sca
         chain_count=len(mch_bones),
         use_curve_radius=False
     )
-    if hasattr(con, "use_even_divisions"):
-        con.use_even_divisions = True
+    # Disabled so joints keep their original chord distances along the curvature
+    con.use_even_divisions = False
 
     for def_name, ctrl_name in zip(chain_data["defs"], chain_data["ctrl"]):
         p_def = pose_bones[def_name]
@@ -135,8 +200,7 @@ def _finalize_spline_chain(armature_obj, curve_obj, chain_data, shapes, ctrl_sca
 @base_component.register_component("SplineIKChain")
 class SplineIKChainComponent(base_component.BaseRigComponent):
     """
-    Curve-driven Spline IK system connecting master hooks (start/mid/end)
-    with intermediate detail FK controls.
+    Cubic NURBS Spline IK system with falloff-driven tangent points to prevent rest offset drift.
     """
     def validate(self) -> List[str]:
         errors = []
@@ -192,7 +256,6 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
             self.armature_obj, def_chain, parent_bone, self.name, "MCH", collection
         )
 
-        # Register master and detail sockets
         self.register_output("start", start_master)
         self.register_output("mid", mid_master)
         self.register_output("end", end_master)
@@ -203,7 +266,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
 
     def build_pose(self) -> None:
         ctrl_scale = self.params.get("ctrl_scale", 0.08)
-        spline_type = self.params.get("spline_type", "NURBS")
+        default_falloff = self.params.get("default_falloff", 1.0)
         shapes = self.context.shapes
         pose_bones = self.armature_obj.pose.bones
         settings_bone_name = self.edit_data.get("ctrl_settings")
@@ -211,8 +274,18 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
             for ctrl_name in self.controls:
                 if ctrl_name in pose_bones and ctrl_name != settings_bone_name:
                     pose_bones[ctrl_name]["_settings_bone"] = settings_bone_name
+
+        mid_ctrl = self.master_ctrls[1]
+        if mid_ctrl in pose_bones:
+            core_framework.create_custom_property(
+                pose_bones[mid_ctrl], "Falloff", default=default_falloff, min_val=0.1, max_val=2.0,
+                description="Controls span breadth of the curve influence"
+            )
+
         curve_name = f"CURVE_{self.name}"
-        self.curve_obj = _create_driven_curve(curve_name, self.master_ctrls, self.armature_obj, spline_type=spline_type)
+        self.curve_obj = _create_cubic_nurbs_curve(
+            curve_name, self.master_ctrls, self.armature_obj, mid_ctrl_name=mid_ctrl
+        )
         
         _finalize_spline_chain(
             self.armature_obj, self.curve_obj, self.chain_data, shapes, ctrl_scale=ctrl_scale

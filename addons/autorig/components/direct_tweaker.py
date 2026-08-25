@@ -10,7 +10,7 @@ def _build_direct_tweaker(armature_obj, def_name, ctrl_name, parent_name, collec
 @base_component.register_component("DirectTweaker")
 class DirectTweakerComponent(base_component.BaseRigComponent):
     """
-    Direct Tweaker controls with weighted following against target sockets.
+    Direct Tweaker controls with weighted following and optional aim tracking against target sockets.
     Supports explicit custom control names via custom_ctrl_name or per-target ctrl_name.
     """
     def validate(self) -> List[str]:
@@ -36,11 +36,17 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 def_name = core_framework.find_bone_name(self.armature_obj, item)
                 follow_spec = None
                 follow_socket = None
+                aim_target = False
+                aim_influence = 1.0
+                track_axis = "TRACK_Y"
                 ctrl_name = explicit_ctrl_name if explicit_ctrl_name else f"{ctrl_prefix}{def_name}"
             else:
                 def_name = core_framework.find_bone_name(self.armature_obj, item.get("deform_bone"))
                 follow_spec = item.get("mouth_corner_follow", item.get("jaw_follow"))
                 follow_socket = item.get("follow_target", self.params.get("jaw_socket"))
+                aim_target = item.get("aim_target", False)
+                aim_influence = item.get("aim_influence", 1.0)
+                track_axis = item.get("track_axis", "TRACK_Y")
                 ctrl_name = item.get("ctrl_name", explicit_ctrl_name or f"{ctrl_prefix}{def_name}")
 
             if follow_spec is not None:
@@ -49,26 +55,37 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                     self.armature_obj, def_name, mch_name,
                     collection_name="MCH", parent_name="", use_deform=False
                 )
+                
+                # Intermediate Aim Bone
+                aim_mch_name = None
+                ctrl_parent = created_mch
+                if aim_target:
+                    aim_mch_name = f"MCH_aim_{self.name}_{def_name}"
+                    ctrl_parent = core_framework.duplicate_bone(
+                        self.armature_obj, def_name, aim_mch_name,
+                        collection_name="MCH", parent_name=created_mch, use_deform=False
+                    )
+
                 created_ctrl = core_framework.duplicate_bone(
                     self.armature_obj, def_name, ctrl_name,
-                    collection_name=collection, parent_name=created_mch, use_deform=False
+                    collection_name=collection, parent_name=ctrl_parent, use_deform=False
                 )
                 self.tweakers.append({
-                    "def": def_name, "ctrl": created_ctrl, "mch": created_mch,
-                    "follow": follow_spec, "follow_socket": follow_socket
+                    "def": def_name, "ctrl": created_ctrl, "mch": created_mch, "aim_mch": aim_mch_name,
+                    "follow": follow_spec, "follow_socket": follow_socket,
+                    "aim_target": aim_target, "aim_influence": aim_influence, "track_axis": track_axis
                 })
             else:
                 created_ctrl = _build_direct_tweaker(
                     self.armature_obj, def_name, ctrl_name, parent_bone, collection
                 )
                 self.tweakers.append({
-                    "def": def_name, "ctrl": created_ctrl, "mch": None, "follow": None
+                    "def": def_name, "ctrl": created_ctrl, "mch": None, "aim_mch": None, "follow": None
                 })
             self.register_output(def_name, created_ctrl)
             self.register_control(created_ctrl)
             if explicit_ctrl_name:
                 self.register_output("main", created_ctrl)
-                
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones
@@ -81,6 +98,7 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
             def_name = t["def"]
             ctrl_name = t["ctrl"]
             mch_name = t["mch"]
+            aim_mch_name = t.get("aim_mch")
             follow_target = self.context.resolve_socket(t.get("follow_socket"))
 
             if mch_name and follow_target and head_target:
@@ -110,11 +128,31 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                     source_prop_path=f'pose.bones["{ctrl_name}"]["Follow_Weight"]',
                     expression="follow", var_name="follow"
                 )
+
+                # Setup Aim Constraint on Intermediate Aim Bone
+                if aim_mch_name and t.get("aim_target"):
+                    p_aim_mch = pose_bones[aim_mch_name]
+                    core_framework.create_custom_property(
+                        p_ctrl, "Aim_Weight", default=t.get("aim_influence", 1.0), min_val=0.0, max_val=1.0,
+                        description="Influence of aiming at follow target"
+                    )
+                    aim_con = p_aim_mch.constraints.new(type='DAMPED_TRACK')
+                    aim_con.target = self.armature_obj
+                    aim_con.subtarget = follow_target
+                    aim_con.track_axis = t.get("track_axis", "TRACK_Y")
+
+                    core_framework.add_driver(
+                        target_id=aim_con, target_datapath="influence",
+                        source_id=self.armature_obj,
+                        source_prop_path=f'pose.bones["{ctrl_name}"]["Aim_Weight"]',
+                        expression="aim", var_name="aim"
+                    )
+
                 p_def = pose_bones[def_name]
                 for c in list(p_def.constraints):
                     p_def.constraints.remove(c)
                 core_framework.add_constraint(p_def, 'COPY_TRANSFORMS', self.armature_obj, subtarget_bone=ctrl_name)
-                core_framework.assign_bone_shape(p_ctrl, shapes[shape_type], scale=(scale, scale, scale))
+                core_framework.assign_bone_shape(p_ctrl, shapes.get(shape_type, shapes['Sphere']), scale=(scale, scale, scale))
             else:
                 p_def = pose_bones[def_name]
                 for c in list(p_def.constraints):
