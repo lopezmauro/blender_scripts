@@ -226,7 +226,7 @@
         "collection": "CTRL_Fingers",
         "side_mult": 1.0,
         "rules": {
-          "thumb": {"fist_curl": 1.0, "fist_twist": -1.0, "fist_spread": 1.5},
+          "thumb": {"fist_curl": 1.0, "fist_twist": -0.2, "fist_spread": 1.5},
           "index": {"fist_curl": 1.3, "fist_twist": 0.1, "spread_factor": -0.35},
           "middle": {"fist_curl": 1.2, "fist_twist": 0.0},
           "pinky": {"fist_curl": 1.3, "fist_twist": -0.15, "spread_factor": 0.35}
@@ -254,7 +254,7 @@
         "collection": "CTRL_Fingers",
         "side_mult": -1.0,
         "rules": {
-          "thumb": {"fist_curl": 1.0, "fist_twist": -1.0, "fist_spread": 1.5},
+          "thumb": {"fist_curl": 1.0, "fist_twist": -0.2, "fist_spread": 1.5},
           "index": {"fist_curl": 1.3, "fist_twist": 0.1, "spread_factor": -0.35},
           "middle": {"fist_curl": 1.2, "fist_twist": 0.0},
           "pinky": {"fist_curl": 1.3, "fist_twist": -0.15, "spread_factor": 0.35}
@@ -302,6 +302,7 @@
       "params": {
         "corner_out": "eyerobital_down_01.L",
         "corner_in": "eyerobital_down_06.L",
+        "corner_in_up": "eyerobital_up_06.L",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
         "side": ".L"
@@ -313,13 +314,14 @@
       "params": {
         "corner_out": "eyerobital_down_01.R",
         "corner_in": "eyerobital_down_06.R",
+        "corner_in_up": "eyerobital_up_06.R",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
         "side": ".R"
       }
     },
     {
-      "type": "SplineIKChain",
+      "type": "SkinnedCurveChain",
       "name": "Orbital_Up_L",
       "params": {
         "deform_chain": [
@@ -330,12 +332,14 @@
         "end_master": "orbital_masters_L.corner_in",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
-        "spline_type": "NURBS",
-        "ctrl_scale": 0.05
+        "ctrl_scale": 0.05,
+        "weights_start": [1.0, 0.75, 0.45, 0.15, 0.0,  0.0,  0.0],
+        "weights_mid":   [0.0, 0.25, 0.55, 0.85, 0.65, 0.25, 0.0],
+        "weights_end":   [0.0, 0.0,  0.0,  0.0,  0.35, 0.75, 1.0]
       }
     },
     {
-      "type": "SplineIKChain",
+      "type": "SkinnedCurveChain",
       "name": "Orbital_Down_L",
       "params": {
         "deform_chain": [
@@ -346,12 +350,14 @@
         "end_master": "orbital_masters_L.corner_in",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
-        "spline_type": "NURBS",
-        "ctrl_scale": 0.05
+        "ctrl_scale": 0.05,
+        "weights_start": [1.0, 0.75, 0.45, 0.15, 0.0,  0.0,  0.0],
+        "weights_mid":   [0.0, 0.25, 0.55, 0.85, 0.65, 0.25, 0.0],
+        "weights_end":   [0.0, 0.0,  0.0,  0.0,  0.35, 0.75, 1.0]
       }
     },
     {
-      "type": "SplineIKChain",
+      "type": "SkinnedCurveChain",
       "name": "Orbital_Up_R",
       "params": {
         "deform_chain": [
@@ -362,12 +368,15 @@
         "end_master": "orbital_masters_R.corner_in",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
-        "spline_type": "BEZIER",
-        "ctrl_scale": 0.05
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.05,
+        "weights_start": [1.0, 0.75, 0.45, 0.15, 0.0,  0.0,  0.0],
+        "weights_mid":   [0.0, 0.25, 0.55, 0.85, 0.65, 0.25, 0.0],
+        "weights_end":   [0.0, 0.0,  0.0,  0.0,  0.35, 0.75, 1.0]
       }
     },
     {
-      "type": "SplineIKChain",
+      "type": "SkinnedCurveChain",
       "name": "Orbital_Down_R",
       "params": {
         "deform_chain": [
@@ -378,8 +387,11 @@
         "end_master": "orbital_masters_R.corner_in",
         "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
-        "spline_type": "BEZIER",
-        "ctrl_scale": 0.05
+        "spline_type": "NURBS",
+        "ctrl_scale": 0.05,
+        "weights_start": [1.0, 0.75, 0.45, 0.15, 0.0,  0.0,  0.0],
+        "weights_mid":   [0.0, 0.25, 0.55, 0.85, 0.65, 0.25, 0.0],
+        "weights_end":   [0.0, 0.0,  0.0,  0.0,  0.35, 0.75, 1.0]
       }
     },
     {
@@ -414,6 +426,7 @@
         "lip_down_center_R": "lip_down01.R",
         "lip_corner_L": "lip_up04.L",
         "lip_corner_R": "lip_up04.R",
+        "uphead_socket": "upHead.tip",
         "head_socket": "neck_head.tip",
         "jaw_socket": "jaw.tip",
         "collection": "CTRL_Face"
@@ -426,7 +439,7 @@
         "deform_chain": ["lip_up01.L", "lip_up02.L", "lip_up03.L", "lip_up04.L"],
         "start_master": "lip_masters.up_master",
         "end_master": "lip_masters.corner_L",
-        "parent_socket": "neck_head.tip",
+        "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
         "spline_type": "NURBS",
         "ctrl_scale": 0.084
@@ -439,7 +452,7 @@
         "deform_chain": ["lip_up01.R", "lip_up02.R", "lip_up03.R", "lip_up04.R"],
         "start_master": "lip_masters.up_master",
         "end_master": "lip_masters.corner_R",
-        "parent_socket": "neck_head.tip",
+        "parent_socket": "upHead.tip",
         "collection": "CTRL_Face",
         "spline_type": "NURBS",
         "ctrl_scale": 0.084
@@ -548,7 +561,20 @@
         "widget_scale": 0.09,
         "collection": "CTRL_Face"
       }
+    },
+     {
+      "type": "DirectTweaker",
+      "name": "nose_tweakers",
+      "params": 
+      {
+        "targets": ["nose01", "nose02", "nose03", "nose04"],
+        "parent_socket": "upHead.tip",
+        "collection": "CTRL_Face",
+        "widget_shape": "Sphere",
+        "widget_scale": 0.09
+      }
     }
+
   ],
   "drivers": [
     {

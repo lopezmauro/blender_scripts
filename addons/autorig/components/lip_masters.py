@@ -24,6 +24,7 @@ class LipMastersComponent(base_component.BaseRigComponent):
 
     def build_edit(self) -> None:
         edit_bones = self.armature_obj.data.edit_bones
+        parent_uphead = self.context.resolve_socket(self.params.get("uphead_socket", self.params.get("head_socket")))
         parent_head = self.resolve_parent_socket("head_socket")
         parent_jaw = self.context.resolve_socket(self.params.get("jaw_socket"))
         collection = self.params.get("collection", "CTRL_Face")
@@ -34,7 +35,7 @@ class LipMastersComponent(base_component.BaseRigComponent):
         ctrl_lip_up = core_framework.create_bone(
             self.armature_obj, "CTRL_Lip_Up_Master",
             head=up_pos, tail=up_pos + mathutils.Vector((0.0, 0.0, 0.03)),
-            parent_name=parent_head, collection_name=collection
+            parent_name=parent_uphead, collection_name=collection
         )
 
         down_l = core_framework.find_bone_name(self.armature_obj, self.params["lip_down_center_L"])

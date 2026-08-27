@@ -8,3 +8,4 @@ from . import lip_masters
 from . import spline_ik_chain
 from . import direct_tweaker
 from . import orbital_masters
+from . import skinned_curve_chain

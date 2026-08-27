@@ -4,7 +4,7 @@ import os
 import sys
 import importlib
 import os; os.path and os.system('cls')
-parent_dir = r"C:\Users\vince\game_dev\Anhedonia_art"
+parent_dir = r"C:\Users\vince\Documents\dev"
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
@@ -19,6 +19,7 @@ def reload_package(package_name):
     # Reload each submodule one by one
     for module_name in sorted(modules_to_reload):
         try:
+            print(f"Reload {module_name}")
             importlib.reload(sys.modules[module_name])
         except Exception as e:
             print(f"Failed to reload {module_name}: {e}")
@@ -28,9 +29,9 @@ import blender_scripts
 reload_package("blender_scripts")
 
 # Import components package to trigger registration decorators
-import blender_scripts.autorig.components
-from blender_scripts.autorig.rig_builder import RigBuilder
-from blender_scripts.autorig.base_component import COMPONENT_REGISTRY
+import blender_scripts.addons.autorig.components
+from blender_scripts.addons.autorig.rig_builder import RigBuilder
+from blender_scripts.addons.autorig.base_component import COMPONENT_REGISTRY
 
 
 def execute_rig_build(armature_obj: bpy.types.Object, config_filepath: str):
@@ -52,7 +53,7 @@ def execute_rig_build(armature_obj: bpy.types.Object, config_filepath: str):
 
 active_obj = bpy.context.active_object
 if active_obj and active_obj.type == 'ARMATURE':
-    config_path = r'C:\Users\vince\game_dev\Anhedonia_art\blender_scripts\autorig\configs\biped_config.json'
+    config_path = r"C:\Users\vince\Documents\dev\blender_scripts\addons\autorig\configs\biped_config.json"
     execute_rig_build(active_obj, config_path)
 else:
     print("Please select an Armature object before running the build.")

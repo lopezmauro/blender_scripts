@@ -391,3 +391,35 @@ def setup_space_switching(armature_obj):
             v.type = 'SINGLE_PROP'
             v.targets[0].id = armature_obj
             v.targets[0].data_path = f'pose.bones["{ctrl_name}"]["Space"]'
+
+
+def extract_pose_shapes_data(armature_obj):
+    """Extracts custom shape transforms and display attributes."""
+    data = {}
+    for pb in armature_obj.pose.bones:
+        if pb.custom_shape:
+            data[pb.name] = {
+                "shape": pb.custom_shape.name,
+                "translation": tuple(pb.custom_shape_translation),
+                "rotation": tuple(pb.custom_shape_rotation_euler),
+                "scale": tuple(pb.custom_shape_scale_xyz),
+                "bone_size": pb.use_custom_shape_bone_size,
+                "wire_width": getattr(pb, "custom_shape_wire_width", 1.0)
+            }
+    return data
+
+def apply_pose_shapes_data(armature_obj, data_dict):
+    """Restores custom shape transforms and display attributes from a dictionary."""
+    for pb_name, props in data_dict.items():
+        pb = armature_obj.pose.bones.get(pb_name)
+        if not pb:
+            continue
+        shape_obj = bpy.data.objects.get(props["shape"])
+        if shape_obj:
+            pb.custom_shape = shape_obj
+        pb.custom_shape_translation = props["translation"]
+        pb.custom_shape_rotation_euler = mathutils.Euler(props["rotation"])
+        pb.custom_shape_scale_xyz = props["scale"]
+        pb.use_custom_shape_bone_size = props["bone_size"]
+        if hasattr(pb, "custom_shape_wire_width"):
+            pb.custom_shape_wire_width = props["wire_width"]

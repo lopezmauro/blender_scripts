@@ -8,6 +8,7 @@ from .. import core_framework, base_component
 class OrbitalMastersComponent(base_component.BaseRigComponent):
     """
     Creates inner and outer eye orbital master controls.
+    Positions the inner corner master at the average of the upper and lower eyelid tips.
     """
     def validate(self) -> List[str]:
         errors = []
@@ -15,6 +16,11 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
             b_name = self.params.get(key)
             if not b_name or not core_framework.find_bone_name(self.armature_obj, b_name):
                 errors.append(f"Orbital corner bone '{key}' ({b_name}) not found.")
+        
+        corner_in_up = self.params.get("corner_in_up")
+        if corner_in_up and not core_framework.find_bone_name(self.armature_obj, corner_in_up):
+            errors.append(f"Orbital upper inner corner bone 'corner_in_up' ({corner_in_up}) not found.")
+
         return errors
 
     def build_edit(self) -> None:
@@ -24,10 +30,20 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
         side = self.params.get("side", "")
 
         out_def = core_framework.find_bone_name(self.armature_obj, self.params["corner_out"])
-        in_def = core_framework.find_bone_name(self.armature_obj, self.params["corner_in"])
+        in_def_down = core_framework.find_bone_name(self.armature_obj, self.params["corner_in"])
+        in_def_up_param = self.params.get("corner_in_up")
+        in_def_up = core_framework.find_bone_name(self.armature_obj, in_def_up_param) if in_def_up_param else None
 
+        # Outer corner sits at the root (head) of bone 01
         pos_out = edit_bones[out_def].head.copy()
-        pos_in = edit_bones[in_def].head.copy()
+
+        # Inner corner sits at the midpoint between the tip (tail) of down_06 and up_06
+        tip_down = edit_bones[in_def_down].tail.copy()
+        if in_def_up:
+            tip_up = edit_bones[in_def_up].tail.copy()
+            pos_in = (tip_down + tip_up) * 0.5
+        else:
+            pos_in = tip_down
 
         ctrl_out = core_framework.create_bone(
             self.armature_obj, f"CTRL_Orbital_Corner_Out{side}",
