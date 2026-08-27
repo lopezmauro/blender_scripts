@@ -1,6 +1,6 @@
 import mathutils
 from typing import List
-from .. import core_framework, base_component
+from .. import core_framework, base_component, naming
 
 
 @base_component.register_component("AimEyes")
@@ -38,22 +38,40 @@ class AimEyesComponent(base_component.BaseRigComponent):
             master_pos += locator_pos
         master_pos /= len(raw_eyes)
 
-        # 1. Master Aim Control
+        # 1. Master Aim Control (Center - no side extension)
+        # Result e.g.: "eyes_aim_master_ctrl"
+        master_name = naming.format_name(
+            name=f"{self.name}_aim_master",
+            role=naming.ROLE_CTRL
+        )
         ctrl_aim_master = core_framework.create_bone(
-            self.armature_obj, f"CTRL_Aim_{self.name}_Master",
-            head=master_pos, tail=master_pos + mathutils.Vector((0.0, 0.0, 0.06)),
-            parent_name=parent_bone, collection_name=collection
+            self.armature_obj,
+            master_name,
+            head=master_pos,
+            tail=master_pos + mathutils.Vector((0.0, 0.0, 0.06)),
+            parent_name=parent_bone,
+            collection_name=collection
         )
         self.ctrl_aim_master = ctrl_aim_master
         self.register_output("master", ctrl_aim_master)
         self.register_control(ctrl_aim_master)
 
-        # 2. Individual Locators
+        # 2. Individual Locators (Sided - with .L / .R extension)
         for key, (def_name, loc_pos) in aim_positions.items():
+            # Result e.g.: "eyes_aim_ctrl.L", "eyes_aim_ctrl.R"
+            norm_side = naming.normalize_side(key)
+            locator_name = naming.format_name(
+                name=f"{self.name}_aim",
+                role=naming.ROLE_CTRL,
+                side=norm_side
+            )
             ctrl_aim_locator = core_framework.create_bone(
-                self.armature_obj, f"CTRL_Aim_{self.name}_{key}",
-                head=loc_pos, tail=loc_pos + mathutils.Vector((0.0, 0.0, 0.04)),
-                parent_name=ctrl_aim_master, collection_name=collection
+                self.armature_obj,
+                locator_name,
+                head=loc_pos,
+                tail=loc_pos + mathutils.Vector((0.0, 0.0, 0.04)),
+                parent_name=ctrl_aim_master,
+                collection_name=collection
             )
             self.eye_bindings[key] = {"def": def_name, "aim": ctrl_aim_locator}
             self.register_output(f"aim_{key}", ctrl_aim_locator)

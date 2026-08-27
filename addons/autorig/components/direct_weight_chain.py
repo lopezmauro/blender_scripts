@@ -1,7 +1,22 @@
 import bpy
 import mathutils
-from typing import List
-from .. import core_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """
+    Extracts the base name and normalized side from a bone name.
+    e.g., 'eyebrow_01.L' -> ('eyebrow_01', 'L')
+          'spine_01'     -> ('spine_01', None)
+    """
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 @base_component.register_component("DirectWeightChain")
@@ -45,13 +60,26 @@ class DirectWeightChainComponent(base_component.BaseRigComponent):
         parent_bone = self.resolve_parent_socket()
         collection = self.params.get("collection", "CTRL_Face")
 
+        # Derive side token from component side param or inspect first chain bone
+        comp_side = self.params.get("side")
+        if comp_side is not None:
+            side = naming.normalize_side(comp_side)
+        else:
+            _, side = _parse_bone_side(def_chain[0])
+
         start_master = self.context.resolve_socket(self.params.get("start_master"))
         mid_master = self.context.resolve_socket(self.params.get("mid_master"))
         end_master = self.context.resolve_socket(self.params.get("end_master"))
 
+        # Master Controls
         if not start_master:
+            start_name = naming.format_name(
+                name=f"{self.name}_start",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             start_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_Start",
+                self.armature_obj, start_name,
                 head=edit_bones[def_chain[0]].head.copy(),
                 tail=edit_bones[def_chain[0]].head.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
@@ -61,16 +89,26 @@ class DirectWeightChainComponent(base_component.BaseRigComponent):
         if not mid_master:
             mid_idx = len(def_chain) // 2
             mid_pos = edit_bones[def_chain[mid_idx]].head.copy()
+            mid_name = naming.format_name(
+                name=f"{self.name}_mid",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             mid_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_Mid",
+                self.armature_obj, mid_name,
                 head=mid_pos, tail=mid_pos + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
             )
             self.register_control(mid_master)
 
         if not end_master:
+            end_name = naming.format_name(
+                name=f"{self.name}_end",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             end_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_End",
+                self.armature_obj, end_name,
                 head=edit_bones[def_chain[-1]].tail.copy(),
                 tail=edit_bones[def_chain[-1]].tail.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
@@ -83,12 +121,24 @@ class DirectWeightChainComponent(base_component.BaseRigComponent):
         self.def_bones = def_chain
 
         for def_name in def_chain:
-            mch_name = f"MCH_{self.name}_{def_name}"
+            base_def_name, bone_side = _parse_bone_side(def_name)
+            target_side = bone_side or side
+
+            mch_name = naming.format_name(
+                name=f"{self.name}_{base_def_name}",
+                role=naming.ROLE_MCH,
+                side=target_side
+            )
             created_mch = core_framework.duplicate_bone(
                 self.armature_obj, def_name, mch_name,
                 collection_name="MCH", parent_name=parent_bone, use_deform=False
             )
-            ctrl_name = f"CTRL_{self.name}_{def_name}"
+
+            ctrl_name = naming.format_name(
+                name=f"{self.name}_{base_def_name}",
+                role=naming.ROLE_CTRL,
+                side=target_side
+            )
             created_ctrl = core_framework.duplicate_bone(
                 self.armature_obj, def_name, ctrl_name,
                 collection_name=collection, parent_name=created_mch, use_deform=False

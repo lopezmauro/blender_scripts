@@ -1,7 +1,18 @@
 import bpy
 import mathutils
-from typing import List, Tuple
-from .. import core_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """Extracts base name and normalized side suffix from bone token."""
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 def _build_skinned_cv_curve(curve_name: str, armature_obj: bpy.types.Object,
@@ -127,11 +138,25 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
         parent_bone = self.resolve_parent_socket()
         collection = self.params.get("collection", "CTRL_Face")
 
+        # Derive normalized side
+        comp_side = self.params.get("side")
+        if comp_side is not None:
+            side = naming.normalize_side(comp_side)
+        else:
+            _, side = _parse_bone_side(def_chain[0])
+
+        self.side = side
+
         # 1. Resolve Master Controls
         start_master = self.context.resolve_socket(self.params.get("start_master"))
         if not start_master:
+            start_name = naming.format_name(
+                name=f"{self.name}_start",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             start_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_Start",
+                self.armature_obj, start_name,
                 head=edit_bones[def_chain[0]].head.copy(),
                 tail=edit_bones[def_chain[0]].head.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
@@ -142,8 +167,13 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
         if not mid_master:
             mid_idx = len(def_chain) // 2
             mid_pos = edit_bones[def_chain[mid_idx]].head.copy()
+            mid_name = naming.format_name(
+                name=f"{self.name}_mid",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             mid_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_Mid",
+                self.armature_obj, mid_name,
                 head=mid_pos, tail=mid_pos + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
             )
@@ -151,8 +181,13 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
 
         end_master = self.context.resolve_socket(self.params.get("end_master"))
         if not end_master:
+            end_name = naming.format_name(
+                name=f"{self.name}_end",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             end_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_End",
+                self.armature_obj, end_name,
                 head=edit_bones[def_chain[-1]].tail.copy(),
                 tail=edit_bones[def_chain[-1]].tail.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
@@ -167,12 +202,24 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
         self.def_bones = def_chain
 
         for def_name in def_chain:
-            mch_name = f"MCH_{self.name}_{def_name}"
+            base_def_name, bone_side = _parse_bone_side(def_name)
+            target_side = bone_side or side
+
+            mch_name = naming.format_name(
+                name=f"{self.name}_{base_def_name}",
+                role=naming.ROLE_MCH,
+                side=target_side
+            )
             created_mch = core_framework.duplicate_bone(
                 self.armature_obj, def_name, mch_name,
                 collection_name="MCH", parent_name=parent_bone, use_deform=False
             )
-            ctrl_name = f"CTRL_{self.name}_{def_name}"
+
+            ctrl_name = naming.format_name(
+                name=f"{self.name}_{base_def_name}",
+                role=naming.ROLE_CTRL,
+                side=target_side
+            )
             created_ctrl = core_framework.duplicate_bone(
                 self.armature_obj, def_name, ctrl_name,
                 collection_name=collection, parent_name=created_mch, use_deform=False
@@ -181,27 +228,46 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
             self.ctrl_bones.append(created_ctrl)
 
         # 3. Create MCH Anchor Bones for Matrix Skinning
-        # N bones -> N+1 landmark points (bone heads + final bone tail)
         point_positions = [edit_bones[b].head.copy() for b in def_chain]
         point_positions.append(edit_bones[def_chain[-1]].tail.copy())
 
         self.anchor_map = []
         for i, pos in enumerate(point_positions):
             # Start Master Anchor
+            a_start_name = naming.format_name(
+                name=f"{self.name}_anchor_start",
+                role=naming.ROLE_MCH,
+                side=side,
+                index=i
+            )
             a_start = core_framework.create_bone(
-                self.armature_obj, f"MCH_{self.name}_Anchor_Start_{i:02d}",
+                self.armature_obj, a_start_name,
                 head=pos, tail=pos + mathutils.Vector((0.0, 0.0, 0.005)),
                 parent_name=start_master, collection_name="MCH", use_deform=False
             )
+
             # Mid Master Anchor
+            a_mid_name = naming.format_name(
+                name=f"{self.name}_anchor_mid",
+                role=naming.ROLE_MCH,
+                side=side,
+                index=i
+            )
             a_mid = core_framework.create_bone(
-                self.armature_obj, f"MCH_{self.name}_Anchor_Mid_{i:02d}",
+                self.armature_obj, a_mid_name,
                 head=pos, tail=pos + mathutils.Vector((0.0, 0.0, 0.005)),
                 parent_name=mid_master, collection_name="MCH", use_deform=False
             )
+
             # End Master Anchor
+            a_end_name = naming.format_name(
+                name=f"{self.name}_anchor_end",
+                role=naming.ROLE_MCH,
+                side=side,
+                index=i
+            )
             a_end = core_framework.create_bone(
-                self.armature_obj, f"MCH_{self.name}_Anchor_End_{i:02d}",
+                self.armature_obj, a_end_name,
                 head=pos, tail=pos + mathutils.Vector((0.0, 0.0, 0.005)),
                 parent_name=end_master, collection_name="MCH", use_deform=False
             )
@@ -233,7 +299,7 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
             w_start, w_mid, w_end = self._calculate_default_weights(num_points)
 
         # 1. Build Skinned Curve with Matrix Anchors
-        curve_name = f"CURVE_{self.name}"
+        curve_name = naming.format_name(name=f"{self.name}_curve", side=self.side)
         curve_obj = _build_skinned_cv_curve(
             curve_name, self.armature_obj, point_positions, self.anchor_map,
             w_start, w_mid, w_end
@@ -244,7 +310,11 @@ class SkinnedCurveChainComponent(base_component.BaseRigComponent):
         # 2. Build CV tracking Proxies
         cv_proxies = []
         for i in range(num_points):
-            proxy_name = f"PROXY_CV_{self.name}_{i:02d}"
+            proxy_name = naming.format_name(
+                name=f"{self.name}_proxy_cv",
+                side=self.side,
+                index=i
+            )
             proxy = bpy.data.objects.get(proxy_name)
             if not proxy:
                 proxy = bpy.data.objects.new(proxy_name, None)

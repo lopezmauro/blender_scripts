@@ -1,7 +1,18 @@
 import math
 import mathutils
-from typing import List
-from .. import core_framework, systems_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, systems_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """Extracts base name and normalized side suffix from bone token."""
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 def solve_blender_pole_angle(arm_obj, base_bone_name, pole_target_name):
@@ -54,8 +65,15 @@ class LimbComponent(base_component.BaseRigComponent):
     def build_edit(self) -> None:
         edit_bones = self.armature_obj.data.edit_bones
         def_chain = [core_framework.find_bone_name(self.armature_obj, b) for b in self.params["deform_chain"]]
-        side = self.params.get("side", "")
-        limb_type = self.params.get("limb_type", "Arm")
+        
+        # Derive normalized side
+        comp_side = self.params.get("side")
+        if comp_side is not None:
+            side = naming.normalize_side(comp_side)
+        else:
+            _, side = _parse_bone_side(def_chain[0])
+
+        limb_type = self.params.get("limb_type", "Arm").lower()
         has_foot = self.params.get("has_reverse_foot", False)
         ball_def = core_framework.find_bone_name(self.armature_obj, self.params.get("ball_bone", ""))
         parent_bone = self.resolve_parent_socket()
@@ -65,9 +83,15 @@ class LimbComponent(base_component.BaseRigComponent):
         collar_def = core_framework.find_bone_name(self.armature_obj, self.params.get("collar_bone", ""))
         ctrl_collar = None
         if collar_def:
+            collar_type = "clavicle" if limb_type == "arm" else "hip"
+            collar_name = naming.format_name(
+                name=f"{self.name}_{collar_type}",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             ctrl_collar = self.register_control(core_framework.duplicate_bone(
-                self.armature_obj, collar_def, f"CTRL_{'Clavicle' if limb_type == 'Arm' else 'Hip'}{side}",
-                collection_name=f"CTRL_IK_{limb_type}s", parent_name=parent_bone
+                self.armature_obj, collar_def, collar_name,
+                collection_name=f"CTRL_IK_{limb_type.capitalize()}s", parent_name=parent_bone
             ))
             limb_parent = ctrl_collar
             self.register_output("collar", ctrl_collar)
@@ -78,69 +102,98 @@ class LimbComponent(base_component.BaseRigComponent):
         org_chain = []
         curr_org_parent = limb_parent
         for d_name in def_chain[:2]:
+            base_d, d_side = _parse_bone_side(d_name)
+            org_name = naming.format_name(
+                name=f"{self.name}_{base_d}",
+                role=naming.ROLE_ORG,
+                side=d_side or side
+            )
             org_b = core_framework.duplicate_bone(
-                self.armature_obj, d_name, f"MCH_ORG_{d_name}",
+                self.armature_obj, d_name, org_name,
                 collection_name="MCH", parent_name=curr_org_parent, use_deform=False
             )
             org_chain.append(org_b)
             curr_org_parent = org_b
 
         # 3. FK Chain Controls
-        fk_chain = systems_framework.build_fk_chain(
-            self.armature_obj, def_chain, "CTRL_FK_",
-            f"CTRL_FK_{limb_type}s", limb_parent
-        )
-        for fk_b in fk_chain:
+        fk_chain = []
+        curr_fk_parent = limb_parent
+        for d_name in def_chain:
+            base_d, d_side = _parse_bone_side(d_name)
+            fk_name = naming.format_name(
+                name=f"{self.name}_{base_d}_fk",
+                role=naming.ROLE_CTRL,
+                side=d_side or side
+            )
+            fk_b = core_framework.duplicate_bone(
+                self.armature_obj, d_name, fk_name,
+                collection_name=f"CTRL_FK_{limb_type.capitalize()}s",
+                parent_name=curr_fk_parent,
+                use_deform=False
+            )
+            fk_chain.append(fk_b)
             self.register_control(fk_b)
+            curr_fk_parent = fk_b
 
         ctrl_fk_ball = None
         if has_foot and ball_def:
+            ball_name = naming.format_name(
+                name=f"{self.name}_ball_fk",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             ctrl_fk_ball = self.register_control(core_framework.duplicate_bone(
-                self.armature_obj, ball_def, f"CTRL_FK_Ball{side}",
-                collection_name=f"CTRL_FK_{limb_type}s", parent_name=fk_chain[2]
+                self.armature_obj, ball_def, ball_name,
+                collection_name=f"CTRL_FK_{limb_type.capitalize()}s", parent_name=fk_chain[2]
             ))
 
         # 4. IK Target & Pole Controls
+        ik_end_type = "foot" if limb_type == "leg" else "hand"
         if has_foot:
-            heel_tw_name = f"GUIDE_Heel_Twist{side}"
-            toe_tw_name = f"GUIDE_Toe_Twist{side}"
+            heel_tw_name = naming.format_name(f"heel_twist_{limb_type}", role=naming.ROLE_GUIDE, side=side)
+            toe_tw_name = naming.format_name(f"toe_twist_{limb_type}", role=naming.ROLE_GUIDE, side=side)
             foot_head = edit_bones[def_chain[2]].head.copy()
             g_heel = edit_bones[heel_tw_name].head.copy() if heel_tw_name in edit_bones else foot_head + mathutils.Vector((0, -0.08, 0))
             g_toe = edit_bones[toe_tw_name].head.copy() if toe_tw_name in edit_bones else foot_head + mathutils.Vector((0, 0.15, 0))
             ik_target_head = (g_heel + g_toe) * 0.5
+            
+            ik_name = naming.format_name(name=f"{self.name}_{ik_end_type}_ik", role=naming.ROLE_CTRL, side=side)
             ctrl_ik_target = self.register_control(core_framework.create_bone(
-                self.armature_obj, f"CTRL_IK_{'Foot' if limb_type == 'Leg' else 'Hand'}{side}",
+                self.armature_obj, ik_name,
                 head=ik_target_head, tail=ik_target_head + mathutils.Vector((0.0, 0.2, 0.0)),
-                parent_name=root_socket, collection_name=f"CTRL_IK_{limb_type}s"
+                parent_name=root_socket, collection_name=f"CTRL_IK_{limb_type.capitalize()}s"
             ))
         else:
+            ik_name = naming.format_name(name=f"{self.name}_{ik_end_type}_ik", role=naming.ROLE_CTRL, side=side)
             ctrl_ik_target = self.register_control(core_framework.duplicate_bone(
-                self.armature_obj, def_chain[2], f"CTRL_IK_{'Hand' if limb_type == 'Arm' else 'Foot'}{side}",
-                collection_name=f"CTRL_IK_{limb_type}s", parent_name=root_socket
+                self.armature_obj, def_chain[2], ik_name,
+                collection_name=f"CTRL_IK_{limb_type.capitalize()}s", parent_name=root_socket
             ))
 
-        guide_name = f"GUIDE_Pole_{limb_type}{side}"
+        guide_name = naming.format_name(f"pole_{limb_type}", role=naming.ROLE_GUIDE, side=side)
         eb_u, eb_l = edit_bones[def_chain[0]], edit_bones[def_chain[1]]
         if guide_name in edit_bones:
             guide_pos = edit_bones[guide_name].head.copy()
         else:
-            offset = mathutils.Vector((0.0, 0.35, 0.0)) if limb_type == "Leg" else mathutils.Vector((0.0, -0.3, 0.0))
+            offset = mathutils.Vector((0.0, 0.35, 0.0)) if limb_type == "leg" else mathutils.Vector((0.0, -0.3, 0.0))
             guide_pos = (eb_u.tail + eb_l.head) * 0.5 + offset
 
+        pole_name = naming.format_name(name=f"{self.name}_pole", role=naming.ROLE_CTRL, side=side)
         ctrl_pole = self.register_control(core_framework.create_bone(
-            self.armature_obj, f"CTRL_Pole_{limb_type}{side}",
+            self.armature_obj, pole_name,
             head=guide_pos, tail=guide_pos + mathutils.Vector((0.0, 0.0, 0.08)),
-            parent_name=root_socket, collection_name=f"CTRL_IK_{limb_type}s"
+            parent_name=root_socket, collection_name=f"CTRL_IK_{limb_type.capitalize()}s"
         ))
 
         # 5. Settings Control
         total_chain_len = eb_u.length + eb_l.length
         end_head = edit_bones[def_chain[2]].head
         settings_pos = mathutils.Vector((end_head.x, end_head.y, end_head.z + (total_chain_len * 0.2)))
+        settings_name = naming.format_name(name=f"{self.name}_settings", role=naming.ROLE_CTRL, side=side)
         ctrl_settings = self.register_control(core_framework.create_bone(
-            self.armature_obj, f"CTRL_Settings_{limb_type}{side}",
+            self.armature_obj, settings_name,
             head=settings_pos, tail=settings_pos + mathutils.Vector((0.0, 0.0, 0.06)),
-            parent_name=ctrl_ik_target, collection_name=f"CTRL_IK_{limb_type}s"
+            parent_name=ctrl_ik_target, collection_name=f"CTRL_IK_{limb_type.capitalize()}s"
         ))
 
         # 6. MCH IK Bones (MCH - not controls)
@@ -150,21 +203,24 @@ class LimbComponent(base_component.BaseRigComponent):
         )
 
         # 7. Tweak Controls Layer
-        tweak_col = f"CTRL_IK_{limb_type}s"
+        tweak_col = f"CTRL_IK_{limb_type.capitalize()}s"
+        twk_u_name = naming.format_name(name=f"{self.name}_tweak_upper", role=naming.ROLE_CTRL, side=side)
         ctrl_tweak_upper = self.register_control(core_framework.create_bone(
-            self.armature_obj, f"CTRL_Tweak_Upper_{limb_type}{side}",
+            self.armature_obj, twk_u_name,
             head=eb_u.head.copy(), tail=eb_u.head.copy() + mathutils.Vector((0.0, 0.04, 0.0)),
             parent_name=limb_parent, collection_name=tweak_col, use_deform=False
         ))
 
+        twk_m_name = naming.format_name(name=f"{self.name}_tweak_mid", role=naming.ROLE_CTRL, side=side)
         ctrl_tweak_mid = self.register_control(core_framework.create_bone(
-            self.armature_obj, f"CTRL_Tweak_Mid_{limb_type}{side}",
+            self.armature_obj, twk_m_name,
             head=eb_u.tail.copy(), tail=eb_u.tail.copy() + mathutils.Vector((0.0, 0.04, 0.0)),
             parent_name=org_chain[0], collection_name=tweak_col, use_deform=False
         ))
 
+        twk_e_name = naming.format_name(name=f"{self.name}_tweak_end", role=naming.ROLE_CTRL, side=side)
         ctrl_tweak_end = self.register_control(core_framework.create_bone(
-            self.armature_obj, f"CTRL_Tweak_End_{limb_type}{side}",
+            self.armature_obj, twk_e_name,
             head=eb_l.tail.copy(), tail=eb_l.tail.copy() + mathutils.Vector((0.0, 0.04, 0.0)),
             parent_name=org_chain[1], collection_name=tweak_col, use_deform=False
         ))
@@ -173,11 +229,12 @@ class LimbComponent(base_component.BaseRigComponent):
         mch_ik_ball = None
         if has_foot:
             rf_pivots = systems_framework.build_reverse_foot(
-                self.armature_obj, side, def_chain[2], ball_def, ctrl_ik_target, f"CTRL_IK_{limb_type}s"
+                self.armature_obj, side, def_chain[2], ball_def, ctrl_ik_target, f"CTRL_IK_{limb_type.capitalize()}s"
             )
             if ball_def:
+                mch_ball_name = naming.format_name(name=f"{self.name}_ball_ik", role=naming.ROLE_MCH, side=side)
                 mch_ik_ball = core_framework.duplicate_bone(
-                    self.armature_obj, ball_def, f"MCH_IK_Ball{side}",
+                    self.armature_obj, ball_def, mch_ball_name,
                     collection_name="MCH", parent_name=rf_pivots[7]
                 )
 
@@ -198,7 +255,6 @@ class LimbComponent(base_component.BaseRigComponent):
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones
-        # Tag all registered controls in this limb with their settings master
         settings_bone_name = self.edit_data["ctrl_settings"]
         for ctrl_name in self.controls:
             if ctrl_name in pose_bones and ctrl_name != settings_bone_name:
@@ -207,7 +263,6 @@ class LimbComponent(base_component.BaseRigComponent):
         shapes = self.context.shapes
         ik_endpoint = d["rf_pivots"][7] if d["has_foot"] else d["ctrl_ik_target"]
         ik_subtarget = d["rf_pivots"][8] if d["has_foot"] else d["ctrl_ik_target"]
-        chain_controls = list()
         p_set = pose_bones[d["ctrl_settings"]]
 
         # 1. Register UI properties
@@ -269,7 +324,7 @@ class LimbComponent(base_component.BaseRigComponent):
         if d["ctrl_fk_ball"]:
             fk_list.append(d["ctrl_fk_ball"])
         for fk_ctrl in fk_list:
-            base_s = 0.5 if "Ball" in fk_ctrl else 0.7
+            base_s = 0.5 if "ball" in fk_ctrl.lower() else 0.7
             for a_idx in range(3):
                 vis_drivers.append({
                     "source": {"bone": d["ctrl_settings"], "prop": "IK_FK", "min": 1.0, "max": 0.0, "default": 1.0},
@@ -332,7 +387,6 @@ class LimbComponent(base_component.BaseRigComponent):
         # 10. Reverse Foot Setup
         if d["has_foot"] and d["rf_pivots"]:
             self._setup_foot_mechanics(d)
-
 
     def _setup_foot_mechanics(self, d: dict) -> None:
         pose_bones = self.armature_obj.pose.bones

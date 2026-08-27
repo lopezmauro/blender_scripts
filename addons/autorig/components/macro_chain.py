@@ -1,5 +1,16 @@
-from typing import List, Dict, Any
-from .. import core_framework, base_component
+from typing import List, Dict, Any, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """Extracts base name and normalized side suffix from bone token."""
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 @base_component.register_component("MacroChain")
@@ -24,6 +35,8 @@ class MacroChainComponent(base_component.BaseRigComponent):
         fallback_parent = self.resolve_parent_socket()
         per_chain_parents = self.params.get("parent_sockets", {})
         collection = self.params.get("collection", "CTRL_Fingers")
+        comp_side = self.params.get("side")
+        default_side = naming.normalize_side(comp_side) if comp_side is not None else None
 
         self.built_chains = {}
         for chain_key, bone_names in chains.items():
@@ -35,16 +48,31 @@ class MacroChainComponent(base_component.BaseRigComponent):
 
             for idx, raw_name in enumerate(bone_names):
                 resolved_def = core_framework.find_bone_name(self.armature_obj, raw_name)
-                mch_name = f"MCH_{self.name}_{resolved_def}"
+                base_def_name, bone_side = _parse_bone_side(resolved_def)
+                side = bone_side or default_side
+
+                # e.g., "hand_finger_index_01_mch.L" or "tail_01_mch"
+                mch_name = naming.format_name(
+                    name=f"{self.name}_{base_def_name}",
+                    role=naming.ROLE_MCH,
+                    side=side
+                )
                 created_mch = core_framework.duplicate_bone(
                     self.armature_obj, resolved_def, mch_name,
                     collection_name="MCH", parent_name=current_parent, use_deform=False
                 )
-                ctrl_name = f"CTRL_{self.name}_{resolved_def}"
+
+                # e.g., "hand_finger_index_01_ctrl.L" or "tail_01_ctrl"
+                ctrl_name = naming.format_name(
+                    name=f"{self.name}_{base_def_name}",
+                    role=naming.ROLE_CTRL,
+                    side=side
+                )
                 created_ctrl = core_framework.duplicate_bone(
                     self.armature_obj, resolved_def, ctrl_name,
                     collection_name=collection, parent_name=created_mch, use_deform=False
                 )
+
                 self.register_control(created_ctrl)
                 ctrl_bones.append(created_ctrl)
                 mch_bones.append(created_mch)
@@ -214,7 +242,6 @@ class MacroChainComponent(base_component.BaseRigComponent):
                         }]
                     })
 
-        # Append generated driver specs into params for the driver pass
         if "drivers" not in self.params:
             self.params["drivers"] = []
         self.params["drivers"].extend(driver_specs)

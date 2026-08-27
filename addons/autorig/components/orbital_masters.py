@@ -1,7 +1,18 @@
 import bpy
 import mathutils
-from typing import List
-from .. import core_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """Extracts base name and normalized side suffix from bone token."""
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 @base_component.register_component("OrbitalMasters")
@@ -27,12 +38,18 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
         edit_bones = self.armature_obj.data.edit_bones
         parent_socket = self.resolve_parent_socket()
         collection = self.params.get("collection", "CTRL_Face")
-        side = self.params.get("side", "")
 
         out_def = core_framework.find_bone_name(self.armature_obj, self.params["corner_out"])
         in_def_down = core_framework.find_bone_name(self.armature_obj, self.params["corner_in"])
         in_def_up_param = self.params.get("corner_in_up")
         in_def_up = core_framework.find_bone_name(self.armature_obj, in_def_up_param) if in_def_up_param else None
+
+        # Derive normalized side from param or parse from corner deform bone
+        comp_side = self.params.get("side")
+        if comp_side is not None:
+            side = naming.normalize_side(comp_side)
+        else:
+            _, side = _parse_bone_side(out_def)
 
         # Outer corner sits at the root (head) of bone 01
         pos_out = edit_bones[out_def].head.copy()
@@ -45,13 +62,25 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
         else:
             pos_in = tip_down
 
+        # Formatted names: e.g. "orbital_corner_out_ctrl.L", "orbital_corner_in_ctrl.L"
+        out_name = naming.format_name(
+            name=f"{self.name}_corner_out",
+            role=naming.ROLE_CTRL,
+            side=side
+        )
         ctrl_out = core_framework.create_bone(
-            self.armature_obj, f"CTRL_Orbital_Corner_Out{side}",
+            self.armature_obj, out_name,
             head=pos_out, tail=pos_out + mathutils.Vector((0.0, 0.0, 0.025)),
             parent_name=parent_socket, collection_name=collection
         )
+
+        in_name = naming.format_name(
+            name=f"{self.name}_corner_in",
+            role=naming.ROLE_CTRL,
+            side=side
+        )
         ctrl_in = core_framework.create_bone(
-            self.armature_obj, f"CTRL_Orbital_Corner_In{side}",
+            self.armature_obj, in_name,
             head=pos_in, tail=pos_in + mathutils.Vector((0.0, 0.0, 0.025)),
             parent_name=parent_socket, collection_name=collection
         )

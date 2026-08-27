@@ -1,7 +1,7 @@
 import abc
 import bpy
 from typing import Dict, Any, Optional, List, Type
-from . import core_framework
+from . import core_framework, naming
 
 # --- GLOBAL COMPONENT REGISTRY ---
 COMPONENT_REGISTRY: Dict[str, Type['BaseRigComponent']] = {}
@@ -36,8 +36,9 @@ class RigContext:
 
 
 class BaseRigComponent(abc.ABC):
-    def __init__(self, name: str, params: Dict[str, Any], context: RigContext):
+    def __init__(self, name: str, params: Dict[str, Any], context: RigContext, side: Optional[str] = None):
         self.name: str = name
+        self.side = naming.normalize_side(side)
         self.params: Dict[str, Any] = params
         self.context: RigContext = context
         self.armature_obj: bpy.types.Object = context.armature_obj
@@ -49,6 +50,19 @@ class BaseRigComponent(abc.ABC):
     def controls(self) -> List[str]:
         """Returns the list of animation control bone names created by this component."""
         return list(dict.fromkeys(self._controls))
+
+    def format_name(
+        self,
+        sub_name: Optional[str] = None,
+        role: Optional[str] = None,
+        index: Optional[Union[int, str]] = None,
+    ) -> str:
+        """Helper to build element names within this component's scope and side."""
+        full_base = f"{self.name}_{sub_name}" if sub_name else self.name
+        return naming.format_name(
+            name=full_base, role=role, side=self.side, index=index
+        )
+
 
     def register_control(self, bone_name: Optional[str]) -> Optional[str]:
         """Registers a bone name as an animation control."""

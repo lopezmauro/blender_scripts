@@ -1,11 +1,29 @@
-from typing import List
-from .. import core_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """
+    Extracts the base name and normalized side from a bone name.
+    e.g., 'lip_upper.L' -> ('lip_upper', 'L')
+          'nose_bridge'  -> ('nose_bridge', None)
+    """
+    # Clean possible suffixes like .L, .R, _L, _R
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
+
 
 def _build_direct_tweaker(armature_obj, def_name, ctrl_name, parent_name, collection_name):
     return core_framework.duplicate_bone(
         armature_obj, def_name, ctrl_name,
         collection_name=collection_name, parent_name=parent_name, use_deform=False
     )
+
 
 @base_component.register_component("DirectTweaker")
 class DirectTweakerComponent(base_component.BaseRigComponent):
@@ -27,7 +45,6 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
     def build_edit(self) -> None:
         parent_bone = self.resolve_parent_socket()
         collection = self.params.get("collection", "CTRL_Face")
-        ctrl_prefix = self.params.get("prefix", f"CTRL_{self.name}_")
         explicit_ctrl_name = self.params.get("custom_ctrl_name")
         self.tweakers = []
 
@@ -39,7 +56,7 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 aim_target = False
                 aim_influence = 1.0
                 track_axis = "TRACK_Y"
-                ctrl_name = explicit_ctrl_name if explicit_ctrl_name else f"{ctrl_prefix}{def_name}"
+                item_ctrl_name = explicit_ctrl_name
             else:
                 def_name = core_framework.find_bone_name(self.armature_obj, item.get("deform_bone"))
                 follow_spec = item.get("mouth_corner_follow", item.get("jaw_follow"))
@@ -47,10 +64,28 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 aim_target = item.get("aim_target", False)
                 aim_influence = item.get("aim_influence", 1.0)
                 track_axis = item.get("track_axis", "TRACK_Y")
-                ctrl_name = item.get("ctrl_name", explicit_ctrl_name or f"{ctrl_prefix}{def_name}")
+                item_ctrl_name = item.get("ctrl_name", explicit_ctrl_name)
+
+            # Resolve naming and side tokens
+            base_def_name, side = _parse_bone_side(def_name)
+
+            if item_ctrl_name:
+                ctrl_name = item_ctrl_name
+            else:
+                # e.g., "tweaker_cheek_ctrl.L" or "tweaker_nose_ctrl"
+                ctrl_name = naming.format_name(
+                    name=f"{self.name}_{base_def_name}",
+                    role=naming.ROLE_CTRL,
+                    side=side
+                )
 
             if follow_spec is not None:
-                mch_name = f"MCH_{self.name}_{def_name}"
+                # e.g., "tweaker_cheek_follow_mch.L"
+                mch_name = naming.format_name(
+                    name=f"{self.name}_{base_def_name}_follow",
+                    role=naming.ROLE_MCH,
+                    side=side
+                )
                 created_mch = core_framework.duplicate_bone(
                     self.armature_obj, def_name, mch_name,
                     collection_name="MCH", parent_name="", use_deform=False
@@ -60,7 +95,12 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 aim_mch_name = None
                 ctrl_parent = created_mch
                 if aim_target:
-                    aim_mch_name = f"MCH_aim_{self.name}_{def_name}"
+                    # e.g., "tweaker_cheek_aim_mch.L"
+                    aim_mch_name = naming.format_name(
+                        name=f"{self.name}_{base_def_name}_aim",
+                        role=naming.ROLE_MCH,
+                        side=side
+                    )
                     ctrl_parent = core_framework.duplicate_bone(
                         self.armature_obj, def_name, aim_mch_name,
                         collection_name="MCH", parent_name=created_mch, use_deform=False
@@ -82,6 +122,7 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 self.tweakers.append({
                     "def": def_name, "ctrl": created_ctrl, "mch": None, "aim_mch": None, "follow": None
                 })
+
             self.register_output(def_name, created_ctrl)
             self.register_control(created_ctrl)
             if explicit_ctrl_name:

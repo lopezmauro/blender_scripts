@@ -1,7 +1,18 @@
 import bpy
 import mathutils
-from typing import List
-from .. import core_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """Extracts base name and normalized side suffix from bone token."""
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 def _create_bone_proxy_empty(proxy_name, armature_obj, bone_name):
@@ -19,7 +30,8 @@ def _create_bone_proxy_empty(proxy_name, armature_obj, bone_name):
     con.subtarget = bone_name
     return empty
 
-def _create_cubic_nurbs_curve(curve_name, control_bone_names, armature_obj, mid_ctrl_name=None):
+
+def _create_cubic_nurbs_curve(curve_name, control_bone_names, armature_obj, side=None, mid_ctrl_name=None):
     """
     Builds a 5-point Cubic (order 4) NURBS curve with blended tangent drivers.
     Interpolates rest curvature cleanly while providing wide falloff propagation.
@@ -30,7 +42,11 @@ def _create_cubic_nurbs_curve(curve_name, control_bone_names, armature_obj, mid_
 
     # Master bone proxies: [Start, Mid, End]
     proxies = [
-        _create_bone_proxy_empty(f"PROXY_{curve_name}_{idx:02d}", armature_obj, bone_name)
+        _create_bone_proxy_empty(
+            naming.format_name(f"{curve_name}_proxy", side=side, index=idx),
+            armature_obj,
+            bone_name
+        )
         for idx, bone_name in enumerate(control_bone_names)
     ]
 
@@ -151,19 +167,32 @@ def _create_cubic_nurbs_curve(curve_name, control_bone_names, armature_obj, mid_
     curve_obj.hide_select = True
     return curve_obj
 
+
 def _build_spline_detail_chain(armature_obj, chain_defs, root_parent, label,
-                               mch_collection, ctrl_collection):
+                               mch_collection, ctrl_collection, side=None):
     mch_bones = []
     ctrl_bones = []
     current_parent = root_parent
     for def_name in chain_defs:
-        mch_name = f"MCH_{label}_{def_name}"
+        base_def_name, bone_side = _parse_bone_side(def_name)
+        target_side = bone_side or side
+
+        mch_name = naming.format_name(
+            name=f"{label}_{base_def_name}",
+            role=naming.ROLE_MCH,
+            side=target_side
+        )
         created_mch = core_framework.duplicate_bone(
             armature_obj, def_name, mch_name,
             collection_name=mch_collection, parent_name=current_parent, use_deform=False
         )
         current_parent = created_mch
-        ctrl_name = f"CTRL_{label}_{def_name}"
+
+        ctrl_name = naming.format_name(
+            name=f"{label}_{base_def_name}",
+            role=naming.ROLE_CTRL,
+            side=target_side
+        )
         created_ctrl = core_framework.duplicate_bone(
             armature_obj, def_name, ctrl_name,
             collection_name=ctrl_collection, parent_name=created_mch, use_deform=False
@@ -171,6 +200,7 @@ def _build_spline_detail_chain(armature_obj, chain_defs, root_parent, label,
         mch_bones.append(created_mch)
         ctrl_bones.append(created_ctrl)
     return {"defs": list(chain_defs), "mch": mch_bones, "ctrl": ctrl_bones}
+
 
 def _finalize_spline_chain(armature_obj, curve_obj, chain_data, shapes, ctrl_scale=0.08):
     pose_bones = armature_obj.pose.bones
@@ -197,6 +227,7 @@ def _finalize_spline_chain(armature_obj, curve_obj, chain_data, shapes, ctrl_sca
             pose_bones[ctrl_name], shapes['Sphere'], scale=(ctrl_scale, ctrl_scale, ctrl_scale)
         )
 
+
 @base_component.register_component("SplineIKChain")
 class SplineIKChainComponent(base_component.BaseRigComponent):
     """
@@ -217,14 +248,28 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         def_chain = [core_framework.find_bone_name(self.armature_obj, b) for b in self.params["deform_chain"]]
         parent_bone = self.resolve_parent_socket()
         collection = self.params.get("collection", "CTRL_Face")
+
+        # Derive normalized side
+        comp_side = self.params.get("side")
+        if comp_side is not None:
+            side = naming.normalize_side(comp_side)
+        else:
+            _, side = _parse_bone_side(def_chain[0])
+
+        self.side = side
         
         start_master = self.context.resolve_socket(self.params.get("start_master"))
         mid_master = self.context.resolve_socket(self.params.get("mid_master"))
         end_master = self.context.resolve_socket(self.params.get("end_master"))
 
         if not start_master:
+            start_name = naming.format_name(
+                name=f"{self.name}_start",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             start_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_Start",
+                self.armature_obj, start_name,
                 head=edit_bones[def_chain[0]].head.copy(),
                 tail=edit_bones[def_chain[0]].head.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
@@ -234,16 +279,26 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         if not mid_master:
             mid_idx = len(def_chain) // 2
             mid_pos = edit_bones[def_chain[mid_idx]].head.copy()
+            mid_name = naming.format_name(
+                name=f"{self.name}_mid",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             mid_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_Mid",
+                self.armature_obj, mid_name,
                 head=mid_pos, tail=mid_pos + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
             )
             self.register_control(mid_master)
 
         if not end_master:
+            end_name = naming.format_name(
+                name=f"{self.name}_end",
+                role=naming.ROLE_CTRL,
+                side=side
+            )
             end_master = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name}_End",
+                self.armature_obj, end_name,
                 head=edit_bones[def_chain[-1]].tail.copy(),
                 tail=edit_bones[def_chain[-1]].tail.copy() + mathutils.Vector((0.0, 0.0, 0.025)),
                 parent_name=parent_bone, collection_name=collection
@@ -253,7 +308,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         self.master_ctrls = [start_master, mid_master, end_master]
         
         self.chain_data = _build_spline_detail_chain(
-            self.armature_obj, def_chain, parent_bone, self.name, "MCH", collection
+            self.armature_obj, def_chain, parent_bone, self.name, "MCH", collection, side=side
         )
 
         self.register_output("start", start_master)
@@ -269,7 +324,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         default_falloff = self.params.get("default_falloff", 1.0)
         shapes = self.context.shapes
         pose_bones = self.armature_obj.pose.bones
-        settings_bone_name = self.edit_data.get("ctrl_settings")
+        settings_bone_name = self.edit_data.get("ctrl_settings") if hasattr(self, "edit_data") else None
         if settings_bone_name:
             for ctrl_name in self.controls:
                 if ctrl_name in pose_bones and ctrl_name != settings_bone_name:
@@ -282,9 +337,9 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
                 description="Controls span breadth of the curve influence"
             )
 
-        curve_name = f"CURVE_{self.name}"
+        curve_name = naming.format_name(name=f"{self.name}_curve", side=self.side)
         self.curve_obj = _create_cubic_nurbs_curve(
-            curve_name, self.master_ctrls, self.armature_obj, mid_ctrl_name=mid_ctrl
+            curve_name, self.master_ctrls, self.armature_obj, side=self.side, mid_ctrl_name=mid_ctrl
         )
         
         _finalize_spline_chain(

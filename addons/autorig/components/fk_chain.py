@@ -1,5 +1,20 @@
-from typing import List
-from .. import core_framework, systems_framework, base_component
+from typing import List, Tuple, Optional
+from .. import core_framework, base_component, naming
+
+
+def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
+    """
+    Extracts base name and normalized side suffix from bone token.
+    e.g., 'finger_01.L' -> ('finger_01', 'L')
+          'spine_01'    -> ('spine_01', None)
+    """
+    for sep in [".", "_"]:
+        if len(bone_name) > 2 and bone_name[-2] == sep:
+            side_token = bone_name[-1]
+            norm = naming.normalize_side(side_token)
+            if norm:
+                return bone_name[:-2], norm
+    return bone_name, None
 
 
 @base_component.register_component("FKChain")
@@ -21,18 +36,45 @@ class FKChainComponent(base_component.BaseRigComponent):
 
     def build_edit(self) -> None:
         raw_chain = self.params.get("deform_chain", [])
-        prefix = self.params.get("control_prefix", f"CTRL_{self.name.capitalize()}_")
         collection = self.params.get("collection", "CTRL_Spine")
         parent_socket = self.resolve_parent_socket()
 
-        # Build FK Chain
-        self.ctrl_bones = systems_framework.build_fk_chain(
-            self.armature_obj, raw_chain, prefix, collection, parent_socket
-        )
-        for bone in self.ctrl_bones:
-            self.register_control(bone)
-            
         self.deform_chain = [core_framework.find_bone_name(self.armature_obj, b) for b in raw_chain]
+        
+        # Derive side token from component config or inspect first chain bone
+        comp_side = self.params.get("side")
+        if comp_side is not None:
+            side = naming.normalize_side(comp_side)
+        else:
+            _, side = _parse_bone_side(self.deform_chain[0])
+
+        self.ctrl_bones = []
+        current_parent = parent_socket
+
+        # Build sequential FK Chain using standardized naming
+        for idx, def_name in enumerate(self.deform_chain):
+            base_def_name, bone_side = _parse_bone_side(def_name)
+            target_side = bone_side or side
+
+            # Result e.g.: "spine_fk_01_ctrl" (center) or "tail_fk_01_ctrl.L" (sided)
+            ctrl_name = naming.format_name(
+                name=f"{self.name}_{base_def_name}_fk",
+                role=naming.ROLE_CTRL,
+                side=target_side
+            )
+
+            created_ctrl = core_framework.duplicate_bone(
+                self.armature_obj,
+                def_name,
+                ctrl_name,
+                collection_name=collection,
+                parent_name=current_parent,
+                use_deform=False,
+            )
+
+            self.ctrl_bones.append(created_ctrl)
+            self.register_control(created_ctrl)
+            current_parent = created_ctrl
 
         # Expose sockets
         self.register_output("root", self.ctrl_bones[0])

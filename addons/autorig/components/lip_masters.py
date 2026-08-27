@@ -1,7 +1,7 @@
 import bpy
 import mathutils
 from typing import List
-from .. import core_framework, base_component
+from .. import core_framework, base_component, naming
 
 
 @base_component.register_component("LipMasters")
@@ -29,39 +29,53 @@ class LipMastersComponent(base_component.BaseRigComponent):
         parent_jaw = self.context.resolve_socket(self.params.get("jaw_socket"))
         collection = self.params.get("collection", "CTRL_Face")
 
+        # 1. Upper Lip Master (Center - no side suffix) -> "lip_up_master_ctrl"
         up_l = core_framework.find_bone_name(self.armature_obj, self.params["lip_up_center_L"])
         up_r = core_framework.find_bone_name(self.armature_obj, self.params["lip_up_center_R"])
         up_pos = (edit_bones[up_l].head + edit_bones[up_r].head) * 0.5
+        up_name = naming.format_name(f"{self.name}_up_master", role=naming.ROLE_CTRL)
         ctrl_lip_up = core_framework.create_bone(
-            self.armature_obj, "CTRL_Lip_Up_Master",
+            self.armature_obj, up_name,
             head=up_pos, tail=up_pos + mathutils.Vector((0.0, 0.0, 0.03)),
             parent_name=parent_uphead, collection_name=collection
         )
 
+        # 2. Lower Lip Master (Center - no side suffix) -> "lip_down_master_ctrl"
         down_l = core_framework.find_bone_name(self.armature_obj, self.params["lip_down_center_L"])
         down_r = core_framework.find_bone_name(self.armature_obj, self.params["lip_down_center_R"])
         down_pos = (edit_bones[down_l].head + edit_bones[down_r].head) * 0.5
+        down_name = naming.format_name(f"{self.name}_down_master", role=naming.ROLE_CTRL)
         ctrl_lip_down = core_framework.create_bone(
-            self.armature_obj, "CTRL_Lip_Down_Master",
+            self.armature_obj, down_name,
             head=down_pos, tail=down_pos + mathutils.Vector((0.0, 0.0, 0.03)),
             parent_name=parent_jaw, collection_name=collection
         )
 
+        # 3. Left/Right Mouth Corners (Sided - with .L / .R suffix)
         corners = {}
-        for side, param_key in ((".L", "lip_corner_L"), (".R", "lip_corner_R")):
+        for side_token, param_key in (("L", "lip_corner_L"), ("R", "lip_corner_R")):
+            norm_side = naming.normalize_side(side_token)
             c_def = core_framework.find_bone_name(self.armature_obj, self.params[param_key])
             c_pos = edit_bones[c_def].head.copy()
+
+            mch_corner_name = naming.format_name(
+                f"{self.name}_corner", role=naming.ROLE_MCH, side=norm_side
+            )
             mch_corner = core_framework.create_bone(
-                self.armature_obj, f"MCH_Mouth_Corner{side}",
+                self.armature_obj, mch_corner_name,
                 head=c_pos, tail=c_pos + mathutils.Vector((0.0, 0.0, 0.03)),
                 parent_name="", collection_name="MCH"
             )
+
+            ctrl_corner_name = naming.format_name(
+                f"{self.name}_corner", role=naming.ROLE_CTRL, side=norm_side
+            )
             ctrl_corner = core_framework.create_bone(
-                self.armature_obj, f"CTRL_Mouth_Corner{side}",
+                self.armature_obj, ctrl_corner_name,
                 head=c_pos, tail=c_pos + mathutils.Vector((0.0, 0.0, 0.03)),
                 parent_name=mch_corner, collection_name=collection
             )
-            corners[side] = {"ctrl": ctrl_corner, "mch": mch_corner}
+            corners[norm_side] = {"ctrl": ctrl_corner, "mch": mch_corner}
 
         self.edit_data = {
             "ctrl_up": ctrl_lip_up,
@@ -72,12 +86,12 @@ class LipMastersComponent(base_component.BaseRigComponent):
         }
         self.register_output("up_master", ctrl_lip_up)
         self.register_output("down_master", ctrl_lip_down)
-        self.register_output("corner_L", corners[".L"]["ctrl"])
-        self.register_output("corner_R", corners[".R"]["ctrl"])
+        self.register_output("corner_L", corners[naming.SIDE_LEFT]["ctrl"])
+        self.register_output("corner_R", corners[naming.SIDE_RIGHT]["ctrl"])
         self.register_control(ctrl_lip_up)
         self.register_control(ctrl_lip_down)
-        self.register_control(corners[".L"]["ctrl"])
-        self.register_control(corners[".R"]["ctrl"])
+        self.register_control(corners[naming.SIDE_LEFT]["ctrl"])
+        self.register_control(corners[naming.SIDE_RIGHT]["ctrl"])
 
     def build_pose(self) -> None:
         pose_bones = self.armature_obj.pose.bones
@@ -87,7 +101,7 @@ class LipMastersComponent(base_component.BaseRigComponent):
         core_framework.assign_bone_shape(pose_bones[d["ctrl_up"]], shapes['Box'], scale=(0.1, 0.1, 0.1))
         core_framework.assign_bone_shape(pose_bones[d["ctrl_down"]], shapes['Box'], scale=(0.1, 0.1, 0.1))
 
-        for side, c_info in d["corners"].items():
+        for norm_side, c_info in d["corners"].items():
             ctrl_name = c_info["ctrl"]
             mch_name = c_info["mch"]
             p_ctrl = pose_bones[ctrl_name]

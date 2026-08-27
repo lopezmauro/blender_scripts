@@ -1,6 +1,6 @@
 from typing import List
 import mathutils
-from .. import core_framework, base_component
+from .. import core_framework, base_component, naming
 
 
 @base_component.register_component("Root")
@@ -15,14 +15,17 @@ class RootComponent(base_component.BaseRigComponent):
         def_root = self.params.get("deform_bone", "root")
         resolved = core_framework.find_bone_name(self.armature_obj, def_root)
 
+        # Standardized center control name -> e.g. "root_ctrl"
+        root_name = naming.format_name(name=self.name, role=naming.ROLE_CTRL)
+
         if resolved:
             ctrl_root = core_framework.duplicate_bone(
-                self.armature_obj, resolved, f"CTRL_{self.name.capitalize()}",
+                self.armature_obj, resolved, root_name,
                 collection_name="CTRL_Root", use_deform=False, parent_name=None
             )
         else:
             ctrl_root = core_framework.create_bone(
-                self.armature_obj, f"CTRL_{self.name.capitalize()}",
+                self.armature_obj, root_name,
                 head=mathutils.Vector((0.0, 0.0, 0.0)),
                 tail=mathutils.Vector((0.0, 0.2, 0.0)),
                 collection_name="CTRL_Root", use_deform=False
