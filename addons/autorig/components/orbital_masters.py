@@ -4,17 +4,6 @@ from typing import List, Tuple, Optional
 from .. import core_framework, base_component, naming
 
 
-def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
-    """Extracts base name and normalized side suffix from bone token."""
-    for sep in [".", "_"]:
-        if len(bone_name) > 2 and bone_name[-2] == sep:
-            side_token = bone_name[-1]
-            norm = naming.normalize_side(side_token)
-            if norm:
-                return bone_name[:-2], norm
-    return bone_name, None
-
-
 @base_component.register_component("OrbitalMasters")
 class OrbitalMastersComponent(base_component.BaseRigComponent):
     """
@@ -49,7 +38,7 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
         if comp_side is not None:
             side = naming.normalize_side(comp_side)
         else:
-            _, side = _parse_bone_side(out_def)
+            _, side = naming.parse_bone_side(out_def)
 
         # Outer corner sits at the root (head) of bone 01
         pos_out = edit_bones[out_def].head.copy()
@@ -63,8 +52,8 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
             pos_in = tip_down
 
         # Formatted names: e.g. "orbital_corner_out_ctrl.L", "orbital_corner_in_ctrl.L"
-        out_name = naming.format_name(
-            name=f"{self.name}_corner_out",
+        out_name = self.format_name(
+            extra="corner_out",
             role=naming.ROLE_CTRL,
             side=side
         )
@@ -74,8 +63,8 @@ class OrbitalMastersComponent(base_component.BaseRigComponent):
             parent_name=parent_socket, collection_name=collection
         )
 
-        in_name = naming.format_name(
-            name=f"{self.name}_corner_in",
+        in_name = self.format_name(
+            extra="corner_in",
             role=naming.ROLE_CTRL,
             side=side
         )

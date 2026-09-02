@@ -2,17 +2,6 @@ from typing import List, Dict, Any, Tuple, Optional
 from .. import core_framework, base_component, naming
 
 
-def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
-    """Extracts base name and normalized side suffix from bone token."""
-    for sep in [".", "_"]:
-        if len(bone_name) > 2 and bone_name[-2] == sep:
-            side_token = bone_name[-1]
-            norm = naming.normalize_side(side_token)
-            if norm:
-                return bone_name[:-2], norm
-    return bone_name, None
-
-
 @base_component.register_component("MacroChain")
 class MacroChainComponent(base_component.BaseRigComponent):
     """
@@ -48,12 +37,12 @@ class MacroChainComponent(base_component.BaseRigComponent):
 
             for idx, raw_name in enumerate(bone_names):
                 resolved_def = core_framework.find_bone_name(self.armature_obj, raw_name)
-                base_def_name, bone_side = _parse_bone_side(resolved_def)
+                base_def_name, bone_side = naming.parse_bone_side(resolved_def)
                 side = bone_side or default_side
 
                 # e.g., "hand_finger_index_01_mch.L" or "tail_01_mch"
-                mch_name = naming.format_name(
-                    name=f"{self.name}_{base_def_name}",
+                mch_name = self.format_name(
+                    sub_name=base_def_name,
                     role=naming.ROLE_MCH,
                     side=side
                 )
@@ -63,8 +52,8 @@ class MacroChainComponent(base_component.BaseRigComponent):
                 )
 
                 # e.g., "hand_finger_index_01_ctrl.L" or "tail_01_ctrl"
-                ctrl_name = naming.format_name(
-                    name=f"{self.name}_{base_def_name}",
+                ctrl_name = self.format_name(
+                    sub_name=base_def_name,
                     role=naming.ROLE_CTRL,
                     side=side
                 )

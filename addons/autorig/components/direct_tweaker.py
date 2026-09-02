@@ -2,22 +2,6 @@ from typing import List, Tuple, Optional
 from .. import core_framework, base_component, naming
 
 
-def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
-    """
-    Extracts the base name and normalized side from a bone name.
-    e.g., 'lip_upper.L' -> ('lip_upper', 'L')
-          'nose_bridge'  -> ('nose_bridge', None)
-    """
-    # Clean possible suffixes like .L, .R, _L, _R
-    for sep in [".", "_"]:
-        if len(bone_name) > 2 and bone_name[-2] == sep:
-            side_token = bone_name[-1]
-            norm = naming.normalize_side(side_token)
-            if norm:
-                return bone_name[:-2], norm
-    return bone_name, None
-
-
 def _build_direct_tweaker(armature_obj, def_name, ctrl_name, parent_name, collection_name):
     return core_framework.duplicate_bone(
         armature_obj, def_name, ctrl_name,
@@ -67,22 +51,23 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 item_ctrl_name = item.get("ctrl_name", explicit_ctrl_name)
 
             # Resolve naming and side tokens
-            base_def_name, side = _parse_bone_side(def_name)
-
+            base_def_name, side = naming.parse_bone_side(def_name)
+            print(item_ctrl_name, base_def_name)
             if item_ctrl_name:
                 ctrl_name = item_ctrl_name
             else:
                 # e.g., "tweaker_cheek_ctrl.L" or "tweaker_nose_ctrl"
-                ctrl_name = naming.format_name(
-                    name=f"{self.name}_{base_def_name}",
+                ctrl_name = self.format_name(
+                    sub_name=base_def_name,
                     role=naming.ROLE_CTRL,
                     side=side
                 )
-
+            print(ctrl_name)
             if follow_spec is not None:
                 # e.g., "tweaker_cheek_follow_mch.L"
-                mch_name = naming.format_name(
-                    name=f"{self.name}_{base_def_name}_follow",
+                mch_name = self.format_name(
+                    sub_name=base_def_name,
+                    extra="follow",
                     role=naming.ROLE_MCH,
                     side=side
                 )
@@ -96,8 +81,9 @@ class DirectTweakerComponent(base_component.BaseRigComponent):
                 ctrl_parent = created_mch
                 if aim_target:
                     # e.g., "tweaker_cheek_aim_mch.L"
-                    aim_mch_name = naming.format_name(
-                        name=f"{self.name}_{base_def_name}_aim",
+                    aim_mch_name = self.format_name(
+                        sub_name=base_def_name,
+                        extra="aim",
                         role=naming.ROLE_MCH,
                         side=side
                     )

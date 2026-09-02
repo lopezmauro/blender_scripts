@@ -136,6 +136,7 @@
         "side": "L",
         "deform_chain": ["upperarm.L", "lowerarm.L", "hand.L"],
         "collar_bone": "clavicle.L",
+        "pole_guide": "pole_arm_guide.L",
         "parent_socket": "spine.tip",
         "root_socket": "root.main"
       }
@@ -148,6 +149,7 @@
         "side": "R",
         "deform_chain": ["upperarm.R", "lowerarm.R", "hand.R"],
         "collar_bone": "clavicle.R",
+        "pole_guide": "pole_arm_guide.R",
         "parent_socket": "spine.tip",
         "root_socket": "root.main"
       }
@@ -161,6 +163,7 @@
         "deform_chain": ["thigh.L", "calf.L", "foot.L"],
         "collar_bone": "hip.L",
         "ball_bone": "ball.L",
+        "pole_guide": "pole_leg_guide.L",
         "has_reverse_foot": true,
         "parent_socket": "pelvis.tip",
         "root_socket": "root.main"
@@ -174,6 +177,7 @@
         "side": "R",
         "deform_chain": ["thigh.R", "calf.R", "foot.R"],
         "collar_bone": "hip.R",
+        "pole_guide": "pole_leg_guide.R",
         "ball_bone": "ball.R",
         "has_reverse_foot": true,
         "parent_socket": "pelvis.tip",
@@ -263,15 +267,15 @@
       }
     },
     {
-      "type": "DirectTweaker",
+      "type": "SettingsNode",
       "name": "face_settings",
       "params": {
-        "targets": ["upHead"],
         "parent_socket": "neck_head.tip",
         "custom_ctrl_name": "settings_face_ctrl",
         "collection": "CTRL_Face",
         "widget_shape": "Gear",
-        "widget_scale": 0.35
+        "widget_scale": 0.35,
+        "offset": [0.0, -0.15, 0.2]
       }
     },
     {
@@ -295,6 +299,20 @@
         },
         "parent_socket": "up_head.tip",
         "collection": "CTRL_Face"
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "eyelids",
+      "params": {
+        "targets": [
+          "up_eyelid.L", "low_eyelid.L", 
+          "up_eyelid.R", "low_eyelid.R"
+        ],
+        "parent_socket": "up_head.tip",
+        "collection": "CTRL_Face",
+        "widget_shape": "Sphere",
+        "widget_scale": 0.05
       }
     },
     {

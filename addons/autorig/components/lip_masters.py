@@ -33,7 +33,11 @@ class LipMastersComponent(base_component.BaseRigComponent):
         up_l = core_framework.find_bone_name(self.armature_obj, self.params["lip_up_center_L"])
         up_r = core_framework.find_bone_name(self.armature_obj, self.params["lip_up_center_R"])
         up_pos = (edit_bones[up_l].head + edit_bones[up_r].head) * 0.5
-        up_name = naming.format_name(f"{self.name}_up_master", role=naming.ROLE_CTRL)
+        up_name = self.format_name(
+            extra="master_up",
+            role=naming.ROLE_CTRL,
+            side="C"
+        )
         ctrl_lip_up = core_framework.create_bone(
             self.armature_obj, up_name,
             head=up_pos, tail=up_pos + mathutils.Vector((0.0, 0.0, 0.03)),
@@ -44,7 +48,11 @@ class LipMastersComponent(base_component.BaseRigComponent):
         down_l = core_framework.find_bone_name(self.armature_obj, self.params["lip_down_center_L"])
         down_r = core_framework.find_bone_name(self.armature_obj, self.params["lip_down_center_R"])
         down_pos = (edit_bones[down_l].head + edit_bones[down_r].head) * 0.5
-        down_name = naming.format_name(f"{self.name}_down_master", role=naming.ROLE_CTRL)
+        down_name = self.format_name(
+            extra="master_down",
+            role=naming.ROLE_CTRL,
+            side="C"
+        )
         ctrl_lip_down = core_framework.create_bone(
             self.armature_obj, down_name,
             head=down_pos, tail=down_pos + mathutils.Vector((0.0, 0.0, 0.03)),
@@ -58,8 +66,10 @@ class LipMastersComponent(base_component.BaseRigComponent):
             c_def = core_framework.find_bone_name(self.armature_obj, self.params[param_key])
             c_pos = edit_bones[c_def].head.copy()
 
-            mch_corner_name = naming.format_name(
-                f"{self.name}_corner", role=naming.ROLE_MCH, side=norm_side
+            mch_corner_name = self.format_name(
+                extra="corner",
+                role=naming.ROLE_MCH,
+                side=norm_side
             )
             mch_corner = core_framework.create_bone(
                 self.armature_obj, mch_corner_name,
@@ -67,8 +77,10 @@ class LipMastersComponent(base_component.BaseRigComponent):
                 parent_name="", collection_name="MCH"
             )
 
-            ctrl_corner_name = naming.format_name(
-                f"{self.name}_corner", role=naming.ROLE_CTRL, side=norm_side
+            ctrl_corner_name = self.format_name(
+                extra="corner",
+                role=naming.ROLE_CTRL,
+                side=norm_side
             )
             ctrl_corner = core_framework.create_bone(
                 self.armature_obj, ctrl_corner_name,

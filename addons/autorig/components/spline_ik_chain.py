@@ -4,17 +4,6 @@ from typing import List, Tuple, Optional
 from .. import core_framework, base_component, naming
 
 
-def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
-    """Extracts base name and normalized side suffix from bone token."""
-    for sep in [".", "_"]:
-        if len(bone_name) > 2 and bone_name[-2] == sep:
-            side_token = bone_name[-1]
-            norm = naming.normalize_side(side_token)
-            if norm:
-                return bone_name[:-2], norm
-    return bone_name, None
-
-
 def _create_bone_proxy_empty(proxy_name, armature_obj, bone_name):
     existing = bpy.data.objects.get(proxy_name)
     if existing:
@@ -168,17 +157,17 @@ def _create_cubic_nurbs_curve(curve_name, control_bone_names, armature_obj, side
     return curve_obj
 
 
-def _build_spline_detail_chain(armature_obj, chain_defs, root_parent, label,
+def _build_spline_detail_chain(comp_inst, armature_obj, chain_defs, root_parent, label,
                                mch_collection, ctrl_collection, side=None):
     mch_bones = []
     ctrl_bones = []
     current_parent = root_parent
     for def_name in chain_defs:
-        base_def_name, bone_side = _parse_bone_side(def_name)
+        base_def_name, bone_side = naming.parse_bone_side(def_name)
         target_side = bone_side or side
 
-        mch_name = naming.format_name(
-            name=f"{label}_{base_def_name}",
+        mch_name = comp_inst.format_name(
+            sub_name=base_def_name,
             role=naming.ROLE_MCH,
             side=target_side
         )
@@ -188,8 +177,8 @@ def _build_spline_detail_chain(armature_obj, chain_defs, root_parent, label,
         )
         current_parent = created_mch
 
-        ctrl_name = naming.format_name(
-            name=f"{label}_{base_def_name}",
+        ctrl_name = comp_inst.format_name(
+            sub_name=base_def_name,
             role=naming.ROLE_CTRL,
             side=target_side
         )
@@ -263,11 +252,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         end_master = self.context.resolve_socket(self.params.get("end_master"))
 
         if not start_master:
-            start_name = naming.format_name(
-                name=f"{self.name}_start",
-                role=naming.ROLE_CTRL,
-                side=side
-            )
+            start_name = self.format_name(extra="start", role=naming.ROLE_CTRL, side=side)
             start_master = core_framework.create_bone(
                 self.armature_obj, start_name,
                 head=edit_bones[def_chain[0]].head.copy(),
@@ -279,11 +264,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
         if not mid_master:
             mid_idx = len(def_chain) // 2
             mid_pos = edit_bones[def_chain[mid_idx]].head.copy()
-            mid_name = naming.format_name(
-                name=f"{self.name}_mid",
-                role=naming.ROLE_CTRL,
-                side=side
-            )
+            mid_name = self.format_name(extra="mid", role=naming.ROLE_CTRL, side=side)
             mid_master = core_framework.create_bone(
                 self.armature_obj, mid_name,
                 head=mid_pos, tail=mid_pos + mathutils.Vector((0.0, 0.0, 0.025)),
@@ -292,11 +273,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
             self.register_control(mid_master)
 
         if not end_master:
-            end_name = naming.format_name(
-                name=f"{self.name}_end",
-                role=naming.ROLE_CTRL,
-                side=side
-            )
+            end_name = self.format_name(extra="end", role=naming.ROLE_CTRL, side=side)
             end_master = core_framework.create_bone(
                 self.armature_obj, end_name,
                 head=edit_bones[def_chain[-1]].tail.copy(),
@@ -307,7 +284,7 @@ class SplineIKChainComponent(base_component.BaseRigComponent):
 
         self.master_ctrls = [start_master, mid_master, end_master]
         
-        self.chain_data = _build_spline_detail_chain(
+        self.chain_data = _build_spline_detail_chain(self,
             self.armature_obj, def_chain, parent_bone, self.name, "MCH", collection, side=side
         )
 

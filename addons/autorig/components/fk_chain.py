@@ -2,19 +2,7 @@ from typing import List, Tuple, Optional
 from .. import core_framework, base_component, naming
 
 
-def _parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
-    """
-    Extracts base name and normalized side suffix from bone token.
-    e.g., 'finger_01.L' -> ('finger_01', 'L')
-          'spine_01'    -> ('spine_01', None)
-    """
-    for sep in [".", "_"]:
-        if len(bone_name) > 2 and bone_name[-2] == sep:
-            side_token = bone_name[-1]
-            norm = naming.normalize_side(side_token)
-            if norm:
-                return bone_name[:-2], norm
-    return bone_name, None
+
 
 
 @base_component.register_component("FKChain")
@@ -41,24 +29,24 @@ class FKChainComponent(base_component.BaseRigComponent):
 
         self.deform_chain = [core_framework.find_bone_name(self.armature_obj, b) for b in raw_chain]
         
-        # Derive side token from component config or inspect first chain bone
         comp_side = self.params.get("side")
         if comp_side is not None:
             side = naming.normalize_side(comp_side)
         else:
-            _, side = _parse_bone_side(self.deform_chain[0])
+            _, side = naming.parse_bone_side(self.deform_chain[0])
 
         self.ctrl_bones = []
         current_parent = parent_socket
 
         # Build sequential FK Chain using standardized naming
         for idx, def_name in enumerate(self.deform_chain):
-            base_def_name, bone_side = _parse_bone_side(def_name)
+            base_def_name, bone_side = naming.parse_bone_side(def_name)
             target_side = bone_side or side
 
-            # Result e.g.: "spine_fk_01_ctrl" (center) or "tail_fk_01_ctrl.L" (sided)
-            ctrl_name = naming.format_name(
-                name=f"{self.name}_{base_def_name}_fk",
+            # Call self.format_name so component name deduplication occurs
+            ctrl_name = self.format_name(
+                sub_name=base_def_name,
+                extra="fk",
                 role=naming.ROLE_CTRL,
                 side=target_side
             )

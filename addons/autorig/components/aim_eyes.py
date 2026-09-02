@@ -2,12 +2,12 @@ import mathutils
 from typing import List
 from .. import core_framework, base_component, naming
 
-
 @base_component.register_component("AimEyes")
 class AimEyesComponent(base_component.BaseRigComponent):
     """
     Binocular/Multi-eye Aim tracking setup.
-    Creates individual eye aim targets parented under a master aim controller.
+    Creates individual eye aim targets parented under a master aim controller,
+    and binds the eye deform bones to follow the head socket's location.
     """
     def validate(self) -> List[str]:
         errors = []
@@ -38,8 +38,7 @@ class AimEyesComponent(base_component.BaseRigComponent):
             master_pos += locator_pos
         master_pos /= len(raw_eyes)
 
-        # 1. Master Aim Control (Center - no side extension)
-        # Result e.g.: "eyes_aim_master_ctrl"
+        # 1. Master Aim Control
         master_name = naming.format_name(
             name=f"{self.name}_aim_master",
             role=naming.ROLE_CTRL
@@ -56,10 +55,21 @@ class AimEyesComponent(base_component.BaseRigComponent):
         self.register_output("master", ctrl_aim_master)
         self.register_control(ctrl_aim_master)
 
-        # 2. Individual Locators (Sided - with .L / .R extension)
+        # 2. Individual Locators & MCH Base Bones
         for key, (def_name, loc_pos) in aim_positions.items():
-            # Result e.g.: "eyes_aim_ctrl.L", "eyes_aim_ctrl.R"
             norm_side = naming.normalize_side(key)
+            
+            # Create the MCH bone to preserve offset and follow the head socket
+            mch_name = naming.format_name(
+                name=f"{self.name}_base",
+                role=naming.ROLE_MCH,
+                side=norm_side
+            )
+            base_mch = core_framework.duplicate_bone(
+                self.armature_obj, def_name, mch_name,
+                collection_name="MCH", parent_name=parent_bone, use_deform=False
+            )
+
             locator_name = naming.format_name(
                 name=f"{self.name}_aim",
                 role=naming.ROLE_CTRL,
@@ -73,7 +83,7 @@ class AimEyesComponent(base_component.BaseRigComponent):
                 parent_name=ctrl_aim_master,
                 collection_name=collection
             )
-            self.eye_bindings[key] = {"def": def_name, "aim": ctrl_aim_locator}
+            self.eye_bindings[key] = {"def": def_name, "aim": ctrl_aim_locator, "mch": base_mch}
             self.register_output(f"aim_{key}", ctrl_aim_locator)
             self.register_control(ctrl_aim_locator)
 
@@ -86,21 +96,27 @@ class AimEyesComponent(base_component.BaseRigComponent):
                 if ctrl_name in pose_bones and ctrl_name != self.ctrl_aim_master:
                     pose_bones[ctrl_name]["_settings_bone"] = self.ctrl_aim_master
 
-        # Assign master shape
         core_framework.assign_bone_shape(
             pose_bones[self.ctrl_aim_master], shapes['Box'], scale=(0.15, 0.15, 0.15)
         )
 
-        # Constrain deform eye bones to aim locators
         for key, info in self.eye_bindings.items():
             p_def = pose_bones[info["def"]]
             for c in list(p_def.constraints):
                 p_def.constraints.remove(c)
 
+            # 1. Inherit full transforms (including position offset and head tilt) from the MCH bone
+            core_framework.add_constraint(
+                p_def, 'COPY_TRANSFORMS', self.armature_obj,
+                subtarget_bone=info["mch"]
+            )
+
+            # 2. Override the tracking rotation to look at the aim locator
             core_framework.add_constraint(
                 p_def, 'DAMPED_TRACK', self.armature_obj,
                 subtarget_bone=info["aim"], track_axis='TRACK_Y'
             )
+            
             core_framework.assign_bone_shape(
                 pose_bones[info["aim"]], shapes['Sphere'], scale=(0.075, 0.075, 0.075)
             )
