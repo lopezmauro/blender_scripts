@@ -37,9 +37,11 @@ class FKChainComponent(base_component.BaseRigComponent):
 
         self.ctrl_bones = []
         current_parent = parent_socket
-
+        edit_bones = self.armature_obj.data.edit_bones
         # Build sequential FK Chain using standardized naming
         for idx, def_name in enumerate(self.deform_chain):
+            eb = edit_bones.get(def_name)
+            eb.use_connect = False
             base_def_name, bone_side = naming.parse_bone_side(def_name)
             target_side = bone_side or side
 
@@ -58,6 +60,7 @@ class FKChainComponent(base_component.BaseRigComponent):
                 collection_name=collection,
                 parent_name=current_parent,
                 use_deform=False,
+                use_connect=False
             )
 
             self.ctrl_bones.append(created_ctrl)

@@ -94,7 +94,8 @@ def find_bone_name(armature_obj, target_name):
             return b.name
     return None
 
-def create_bone(armature_obj, bone_name, head, tail, roll=0.0, parent_name=None, collection_name=None, use_deform=False):
+def create_bone(armature_obj, bone_name, head, tail, roll=0.0, parent_name=None, collection_name=None, 
+                use_deform=False, use_connect=None):
     if bpy.context.active_object != armature_obj or armature_obj.mode != 'EDIT':
         bpy.context.view_layer.objects.active = armature_obj
         bpy.ops.object.mode_set(mode='EDIT')
@@ -109,24 +110,33 @@ def create_bone(armature_obj, bone_name, head, tail, roll=0.0, parent_name=None,
     eb.tail = mathutils.Vector(tail)
     eb.roll = roll
     eb.use_deform = use_deform
-
-    if parent_name:
+    if parent_name is None:
+        eb.parent = None
+    else:
         resolved_parent = find_bone_name(armature_obj, parent_name)
+        print(bone_name, "->", resolved_parent)
         if resolved_parent:
             eb.parent = edit_bones[resolved_parent]
 
     actual_name = eb.name
     if collection_name:
         assign_bone_to_collection(armature_obj, actual_name, collection_name)
-
+    if use_connect is not None:
+        eb.use_connect = use_connect
     return actual_name
 
-def duplicate_bone(armature_obj, source_name, new_name, collection_name=None, use_deform=False, parent_name=None):
+def duplicate_bone(armature_obj, source_name, target_name, collection_name=None, use_deform=False, parent_name=None,
+                   use_connect=None, allow_existing: bool = False):
     if bpy.context.active_object != armature_obj or armature_obj.mode != 'EDIT':
         bpy.context.view_layer.objects.active = armature_obj
         bpy.ops.object.mode_set(mode='EDIT')
 
     edit_bones = armature_obj.data.edit_bones
+    if target_name in edit_bones and not allow_existing:
+        raise ValueError(
+            f"[RigBuildError] Bone collision detected: '{target_name}' already exists in "
+            f"armature '{armature_obj.name}'. Refusing to silently mutate or reparent it."
+        )
     resolved_source = find_bone_name(armature_obj, source_name)
     if not resolved_source or resolved_source not in edit_bones:
         raise KeyError(f"Source bone '{source_name}' not found.")
@@ -134,13 +144,14 @@ def duplicate_bone(armature_obj, source_name, new_name, collection_name=None, us
     src = edit_bones[resolved_source]
     return create_bone(
         armature_obj=armature_obj,
-        bone_name=new_name,
+        bone_name=target_name,
         head=src.head.copy(),
         tail=src.tail.copy(),
         roll=src.roll,
         parent_name=parent_name,
         collection_name=collection_name,
-        use_deform=use_deform
+        use_deform=use_deform,
+        use_connect=use_connect
     )
 
 # ==============================================================================

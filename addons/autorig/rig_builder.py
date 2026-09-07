@@ -1,7 +1,9 @@
+import os
+import json
 import bpy
 from typing import Dict, Any, Type, List
 from . import core_framework, systems_framework, base_component
-
+from .validators import config_validator, validatiors
 
 class RigBuilder:
     def __init__(self, armature_obj: bpy.types.Object, config: Dict[str, Any]):
@@ -22,6 +24,7 @@ class RigBuilder:
                 errors.append(f"Component type '{comp_type}' not found in COMPONENT_REGISTRY.")
                 continue
             instance = cls(name=comp_name, params=params, context=self.context)
+            print(comp_type, comp_name, instance)
             self.component_instances.append(instance)
             self.context.components[comp_name] = instance
         return errors
@@ -58,7 +61,15 @@ class RigBuilder:
         bpy.context.view_layer.objects.active = self.armature_obj
         bpy.ops.object.mode_set(mode='EDIT')
         for comp in self.component_instances:
+            print('==========',comp.name, '==========')
             comp.build_edit()
+
+        edit_bones = self.armature_obj.data.edit_bones
+        print("FINAL PARENT CHECK:")
+        for b_name in ["root_ctrl.C", "pelvis_fk_ctrl.C", "spine_fk_01_ctrl.C", "leg_footik_ctrl.R"]:
+            eb = edit_bones.get(b_name)
+            p_name = eb.parent.name if (eb and eb.parent) else None
+            print(f"  {b_name} -> {p_name}")
 
         # 4. POSE MODE PASS (Batched)
         bpy.ops.object.mode_set(mode='POSE')
@@ -94,3 +105,29 @@ class RigBuilder:
         bpy.ops.object.mode_set(mode='OBJECT')
         print(f"[RigBuilder] Successfully built '{self.config.get('rig_name', 'Rig')}' with {len(self.component_instances)} components.")
         return True
+
+def execute_rig_build(armature_obj: bpy.types.Object, config_filepath: str):
+    if not os.path.exists(config_filepath):
+        print(f"[Build Error] Config file not found: {config_filepath}")
+        return
+
+    print(f"[RigBuilder] Loaded components in registry: {list(base_component.COMPONENT_REGISTRY.keys())}")
+
+    with open(config_filepath, 'r') as f:
+        config_data = json.load(f)
+
+    validator = config_validator.ConfigValidator(config_data)
+    validator.register_check(validatiors.check_component_uniqueness)
+    validator.register_check(validatiors.check_bone_name_collisions_and_length)
+    validator.register_check(validatiors.check_socket_references_and_order)
+    validator.register_check(validatiors.check_side_token_consistency)
+    validator.register_check(validatiors.check_driver_targets)
+    validator.register_check(validatiors.check_deform_and_guide_naming_smells)
+    # 2. Run static validation (aborts if any error occurs)
+    validator.run()
+
+    builder = RigBuilder(armature_obj=armature_obj, config=config_data)
+    success = builder.build()
+
+    if success:
+        print(f"[Build Complete] '{config_data.get('rig_name')}' generated successfully.")

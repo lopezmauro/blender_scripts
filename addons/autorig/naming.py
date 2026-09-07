@@ -7,8 +7,8 @@ Format:
   - Multi-word sub-elements (name, extra) are camelCase.
   - Suffix is separated by a period: .{side} (.L, .R, .C)
 """
-
-from typing import Optional, Union, Tuple
+import re
+from typing import Optional, Union, Tuple, List
 
 SIDE_LEFT = "L"
 SIDE_RIGHT = "R"
@@ -110,3 +110,75 @@ def parse_bone_side(bone_name: str) -> Tuple[str, Optional[str]]:
         if norm:
             return sep.join(tokens[:-1]), norm
     return bone_name, None
+
+def derive_component_bone_name(
+    comp_name: str,
+    sub_name: Optional[str] = None,
+    extra: Optional[str] = None,
+    index: Optional[Union[int, str]] = None,
+    role: Optional[str] = None,
+    side: Optional[str] = None,
+) -> str:
+    """
+    Derives standardized bone names ({name}_{extra}_{index}_{role}.{side})
+    by analyzing component names and target sub_names.
+    """
+    # 1. Base component normalization
+    clean_comp = re.sub(r'_[lrLR]$', '', comp_name).strip("._-")
+    clean_comp_singular = re.sub(r's$', '', clean_comp)
+    comp_flat = clean_comp.lower().replace("_", "").rstrip("s")
+
+    comp_tokens = [t.lower().rstrip("s") for t in clean_comp.split("_") if t]
+    comp_whole = {clean_comp.lower(), clean_comp_singular.lower(), comp_flat.lower()}
+
+    base_name = clean_comp_singular
+    parsed_extra_parts: List[str] = []
+    parsed_index = index
+    target_side = side
+
+    if sub_name:
+        # Normalize camelCase/PascalCase to snake_case
+        s_clean = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', sub_name.strip("._-")).lower()
+        s_clean = re.sub(r'_[lrLR]$', '', s_clean)
+
+        # Extract trailing numeric index
+        if parsed_index is None:
+            num_match = re.search(r'(\d+)$', s_clean)
+            if num_match:
+                parsed_index = num_match.group(1)
+                s_clean = s_clean[:num_match.start()].rstrip("._-")
+
+        sub_tokens = [t for t in s_clean.split("_") if t]
+
+        matched_sub_tokens = []
+        remaining_sub_tokens = []
+
+        for st in sub_tokens:
+            st_norm = st.rstrip("s")
+            if st_norm in comp_tokens:
+                matched_sub_tokens.append(st_norm)
+            elif st_norm in comp_whole:
+                pass
+            else:
+                remaining_sub_tokens.append(st)
+
+        # Compound component isolating a single sub-element (e.g. 'neck' in 'neck_head')
+        if len(matched_sub_tokens) == 1 and len(comp_tokens) > 1:
+            base_name = matched_sub_tokens[0]
+
+        if remaining_sub_tokens:
+            parsed_extra_parts.extend(remaining_sub_tokens)
+
+    if extra:
+        parsed_extra_parts.append(extra.strip("._-"))
+
+    joined_extra = to_camel_case("_".join(filter(None, parsed_extra_parts))) or None
+
+    return format_name(
+        name=base_name,
+        extra=joined_extra,
+        index=parsed_index,
+        role=role,
+        side=target_side,
+    )
+

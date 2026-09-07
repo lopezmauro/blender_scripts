@@ -281,6 +281,26 @@ class LimbComponent(base_component.BaseRigComponent):
         ik_subtarget = d["rf_pivots"][8] if d["has_foot"] else d["ctrl_ik_target"]
         p_set = pose_bones[d["ctrl_settings"]]
 
+        # ======================================================================
+        # SNAPPING METADATA REGISTRATION
+        # ======================================================================
+        limb_type_str = self.params.get("limb_type", "Arm").capitalize()
+        fk_list = [d["fk_chain"][0], d["fk_chain"][1], d["fk_chain"][2]]
+        ik_sources = [d["mch_ik"][0], d["mch_ik"][1], ik_endpoint]
+
+        # Include ball / toe if present
+        if d["has_foot"] and d["ctrl_fk_ball"] and d["mch_ik_ball"]:
+            fk_list.append(d["ctrl_fk_ball"])
+            ik_sources.append(d["mch_ik_ball"])
+
+        p_set["_snap_limb_type"] = limb_type_str
+        p_set["_snap_fk_chain"] = ",".join(fk_list)
+        p_set["_snap_ik_sources"] = ",".join(ik_sources)
+        p_set["_snap_ik_ctrl"] = d["ctrl_ik_target"]
+        p_set["_snap_pole_ctrl"] = d["ctrl_pole"]
+        p_set["_snap_tweaks"] = ",".join(d["ctrl_tweaks"])
+        # ======================================================================
+
         # 1. Register UI properties
         core_framework.create_custom_property(p_set, "IK_FK", default=1.0, min_val=0.0, max_val=1.0)
         core_framework.create_custom_property(p_set, "Stretch", default=0.0, min_val=0.0, max_val=1.0)

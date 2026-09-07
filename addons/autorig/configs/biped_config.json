@@ -80,7 +80,7 @@
       "type": "DirectTweaker",
       "name": "ear_roots",
       "params": {
-        "targets": ["earRoot.L", "earRoot.R"],
+        "targets": ["ear_root.L", "ear_root.R"],
         "parent_socket": "up_head.tip",
         "collection": "CTRL_Tail_Ears",
         "widget_shape": "Circle",
@@ -95,7 +95,7 @@
         "chains": {
           "ear": ["ear01.L", "ear02.L", "ear03.L", "ear04.L"]
         },
-        "parent_socket": "ear_roots.earRoot.L",
+        "parent_socket": "ear_roots.ear_root.L",
         "collection": "CTRL_Tail_Ears",
         "side_mult": 1.0
       }
@@ -108,7 +108,7 @@
         "chains": {
           "ear": ["ear01.R", "ear02.R", "ear03.R", "ear04.R"]
         },
-        "parent_socket": "ear_roots.earRoot.R",
+        "parent_socket": "ear_roots.ear_root.R",
         "collection": "CTRL_Tail_Ears",
         "side_mult": -1.0
       }
@@ -303,13 +303,31 @@
     },
     {
       "type": "DirectTweaker",
-      "name": "eyelids",
+      "name": "eyelids_l",
       "params": {
+        "side": "L",
+        "mix_mode": "BEFORE_ORIGINAL",
+        "space": "LOCAL",
         "targets": [
-          "up_eyelid.L", "low_eyelid.L", 
+          "up_eyelid.L", "low_eyelid.L"
+        ],
+        "parent_socket": "eyes.L",
+        "collection": "CTRL_Face",
+        "widget_shape": "Sphere",
+        "widget_scale": 0.05
+      }
+    },
+    {
+      "type": "DirectTweaker",
+      "name": "eyelids_r",
+      "params": {
+        "side": "R",
+        "mix_mode": "BEFORE_ORIGINAL",
+        "space": "LOCAL",
+        "targets": [
           "up_eyelid.R", "low_eyelid.R"
         ],
-        "parent_socket": "up_head.tip",
+        "parent_socket": "eyes.R",
         "collection": "CTRL_Face",
         "widget_shape": "Sphere",
         "widget_scale": 0.05
@@ -320,9 +338,9 @@
       "name": "orbital_masters",
       "params": {
         "side": "L",
-        "corner_out": "eyerobital_down_01.L",
-        "corner_in": "eyerobital_down_06.L",
-        "corner_in_up": "eyerobital_up_06.L",
+        "corner_out": "eye_orbital_down_01.L",
+        "corner_in": "eye_orbital_down_06.L",
+        "corner_in_up": "eye_orbital_up_06.L",
         "parent_socket": "up_head.tip",
         "collection": "CTRL_Face"
       }
@@ -332,9 +350,9 @@
       "name": "orbital_masters_r",
       "params": {
         "side": "R",
-        "corner_out": "eyerobital_down_01.R",
-        "corner_in": "eyerobital_down_06.R",
-        "corner_in_up": "eyerobital_up_06.R",
+        "corner_out": "eye_orbital_down_01.R",
+        "corner_in": "eye_orbital_down_06.R",
+        "corner_in_up": "eye_orbital_up_06.R",
         "parent_socket": "up_head.tip",
         "collection": "CTRL_Face"
       }
@@ -345,8 +363,8 @@
       "params": {
         "side": "L",
         "deform_chain": [
-          "eyerobital_up_01.L", "eyerobital_up_02.L", "eyerobital_up_03.L",
-          "eyerobital_up_04.L", "eyerobital_up_05.L", "eyerobital_up_06.L"
+          "eye_orbital_up_01.L", "eye_orbital_up_02.L", "eye_orbital_up_03.L",
+          "eye_orbital_up_04.L", "eye_orbital_up_05.L", "eye_orbital_up_06.L"
         ],
         "start_master": "orbital_masters.corner_out",
         "end_master": "orbital_masters.corner_in",
@@ -364,8 +382,8 @@
       "params": {
         "side": "L",
         "deform_chain": [
-          "eyerobital_down_01.L", "eyerobital_down_02.L", "eyerobital_down_03.L",
-          "eyerobital_down_04.L", "eyerobital_down_05.L", "eyerobital_down_06.L"
+          "eye_orbital_down_01.L", "eye_orbital_down_02.L", "eye_orbital_down_03.L",
+          "eye_orbital_down_04.L", "eye_orbital_down_05.L", "eye_orbital_down_06.L"
         ],
         "start_master": "orbital_masters.corner_out",
         "end_master": "orbital_masters.corner_in",
@@ -383,8 +401,8 @@
       "params": {
         "side": "R",
         "deform_chain": [
-          "eyerobital_up_01.R", "eyerobital_up_02.R", "eyerobital_up_03.R",
-          "eyerobital_up_04.R", "eyerobital_up_05.R", "eyerobital_up_06.R"
+          "eye_orbital_up_01.R", "eye_orbital_up_02.R", "eye_orbital_up_03.R",
+          "eye_orbital_up_04.R", "eye_orbital_up_05.R", "eye_orbital_up_06.R"
         ],
         "start_master": "orbital_masters_r.corner_out",
         "end_master": "orbital_masters_r.corner_in",
@@ -403,8 +421,8 @@
       "params": {
         "side": "R",
         "deform_chain": [
-          "eyerobital_down_01.R", "eyerobital_down_02.R", "eyerobital_down_03.R",
-          "eyerobital_down_04.R", "eyerobital_down_05.R", "eyerobital_down_06.R"
+          "eye_orbital_down_01.R", "eye_orbital_down_02.R", "eye_orbital_down_03.R",
+          "eye_orbital_down_04.R", "eye_orbital_down_05.R", "eye_orbital_down_06.R"
         ],
         "start_master": "orbital_masters_r.corner_out",
         "end_master": "orbital_masters_r.corner_in",
@@ -610,24 +628,24 @@
       "name": "Blink_L",
       "source": {"bone": "eyes.master", "prop": "Blink_L", "min": 1.0, "max": 0.0, "default": 1.0},
       "drivens": [
-        {"bone": "up_eyelid.L", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "up_eyelid.L", "channel": "location", "index": 0, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "up_eyelid.L", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "low_eyelid.L", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "low_eyelid.L", "channel": "location", "index": 0, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "low_eyelid.L", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35}
+        {"bone": "eyelids_l.up_eyelid.L", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_l.up_eyelid.L", "channel": "location", "index": 0, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_l.up_eyelid.L", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_l.low_eyelid.L", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_l.low_eyelid.L", "channel": "location", "index": 0, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_l.low_eyelid.L", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35}
       ]
     },
     {
       "name": "Blink_R",
       "source": {"bone": "eyes.master", "prop": "Blink_R", "min": 1.0, "max": 0.0, "default": 1.0},
       "drivens": [
-        {"bone": "up_eyelid.R", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "up_eyelid.R", "channel": "location", "index": 0, "rest": 0.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "up_eyelid.R", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "low_eyelid.R", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "low_eyelid.R", "channel": "location", "index": 0, "rest": 0.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
-        {"bone": "low_eyelid.R", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35}
+        {"bone": "eyelids_r.up_eyelid.R", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_r.up_eyelid.R", "channel": "location", "index": 0, "rest": 0.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_r.up_eyelid.R", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_r.low_eyelid.R", "channel": "scale", "index": 1, "rest": 1.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_r.low_eyelid.R", "channel": "location", "index": 0, "rest": 0.0, "target": 0.1, "curve": "ease_out", "mid_val": 0.35},
+        {"bone": "eyelids_r.low_eyelid.R", "channel": "location", "index": 1, "rest": 0.0, "target": -0.1, "curve": "ease_out", "mid_val": 0.35}
       ]
     },
     {
@@ -880,12 +898,12 @@
       "name": "Face_Visibility_Ears",
       "source": {"bone": "face_settings.main", "prop": "Ears", "min": 0.0, "max": 1.0, "default": 1.0},
       "drivens": [
-        {"bone": "ear_roots.earRoot.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.3, "curve": "linear"},
-        {"bone": "ear_roots.earRoot.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.3, "curve": "linear"},
-        {"bone": "ear_roots.earRoot.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.3, "curve": "linear"},
-        {"bone": "ear_roots.earRoot.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.3, "curve": "linear"},
-        {"bone": "ear_roots.earRoot.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.3, "curve": "linear"},
-        {"bone": "ear_roots.earRoot.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.ear_root.L", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.ear_root.L", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.ear_root.L", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.ear_root.R", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.ear_root.R", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.3, "curve": "linear"},
+        {"bone": "ear_roots.ear_root.R", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.3, "curve": "linear"},
         {"bone": "ear.settings", "channel": "custom_shape_scale_xyz", "index": 0, "rest": 0.0, "target": 0.35, "curve": "linear"},
         {"bone": "ear.settings", "channel": "custom_shape_scale_xyz", "index": 1, "rest": 0.0, "target": 0.35, "curve": "linear"},
         {"bone": "ear.settings", "channel": "custom_shape_scale_xyz", "index": 2, "rest": 0.0, "target": 0.35, "curve": "linear"},

@@ -166,18 +166,22 @@ class MacroChainComponent(base_component.BaseRigComponent):
                     })
                 elif is_hand and idx == 0 and spread_factor != 0.0:
                     driver_specs.append({
-                        "source": {"bone": self.settings_bone_name, "prop": "Finger_Spread", "min": 0.0, "max": 1.0, "default": 0.0},
+                        "sources": [
+                            {"bone": self.settings_bone_name, "prop": "Finger_Spread", "var_name": "spread"}
+                        ],
                         "drivens": [{
                             "bone": m_name, "channel": "rotation_euler", "index": 0,
-                            "rest": 0.0, "target": spread_factor * side_mult, "curve": "linear"
+                            "expression": f"spread * {spread_factor * side_mult:.4f}"
                         }]
                     })
                 else:
                     driver_specs.append({
-                        "source": {"bone": self.settings_bone_name, "prop": prop_bend, "min": 0.0, "max": 1.0, "default": 0.0},
+                        "sources": [
+                            {"bone": self.settings_bone_name, "prop": prop_bend, "var_name": "bend"}
+                        ],
                         "drivens": [{
                             "bone": m_name, "channel": "rotation_euler", "index": 0,
-                            "rest": 0.0, "target": 0.5 * side_mult, "curve": "linear"
+                            "expression": f"bend * {0.5 * side_mult:.4f}"
                         }]
                     })
 
@@ -195,20 +199,24 @@ class MacroChainComponent(base_component.BaseRigComponent):
                     })
                 else:
                     driver_specs.append({
-                        "source": {"bone": self.settings_bone_name, "prop": prop_twist, "min": 0.0, "max": 1.0, "default": 0.0},
+                        "sources": [
+                            {"bone": self.settings_bone_name, "prop": prop_twist, "var_name": "twist"}
+                        ],
                         "drivens": [{
                             "bone": m_name, "channel": "rotation_euler", "index": 1,
-                            "rest": 0.0, "target": 0.5 * side_mult, "curve": "linear"
+                            "expression": f"twist * {0.5 * side_mult:.4f}"
                         }]
                     })
 
                 # Rotation Z (Curl / Abduct)
                 if is_hand and chain_key == "thumb" and idx == 0:
                     driver_specs.append({
-                        "source": {"bone": self.settings_bone_name, "prop": "Thumb_Abduct", "min": 0.0, "max": 1.0, "default": 0.0},
+                        "sources": [
+                            {"bone": self.settings_bone_name, "prop": "Thumb_Abduct", "var_name": "abduct"}
+                        ],
                         "drivens": [{
                             "bone": m_name, "channel": "rotation_euler", "index": 2,
-                            "rest": 0.0, "target": 0.5 * side_mult, "curve": "linear"
+                            "expression": f"abduct * {0.5 * side_mult:.4f}"
                         }]
                     })
                 elif is_hand:
@@ -224,10 +232,12 @@ class MacroChainComponent(base_component.BaseRigComponent):
                     })
                 else:
                     driver_specs.append({
-                        "source": {"bone": self.settings_bone_name, "prop": prop_curl, "min": 0.0, "max": 1.0, "default": 0.0},
+                        "sources": [
+                            {"bone": self.settings_bone_name, "prop": prop_curl, "var_name": "curl"}
+                        ],
                         "drivens": [{
                             "bone": m_name, "channel": "rotation_euler", "index": 2,
-                            "rest": 0.0, "target": 0.75, "curve": "linear"
+                            "expression": "curl * 0.75"
                         }]
                     })
 
