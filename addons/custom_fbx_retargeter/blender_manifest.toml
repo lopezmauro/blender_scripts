@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "custom_fbx_retargeter"
+name = "Custom FBX Retargeter"
+version = "1.0.0"
+tagline: "Custom addon for FBX retargeting",
+maintainer = "Your Name"
+type = "add-on"
+
+# Supported Blender versions
+blender_version_min = "5.1.0"
+
+# Where tools appear in the interface
+tags = ["Animation"]
