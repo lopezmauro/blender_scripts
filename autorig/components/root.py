@@ -30,6 +30,7 @@ class RootComponent(base_component.BaseRigComponent):
                 tail=mathutils.Vector((0.0, 0.2, 0.0)),
                 collection_name="CTRL_Root", use_deform=False
             )
+
         self.register_output("main", ctrl_root)
         self.register_control(ctrl_root)
         self.deform_bone = resolved
