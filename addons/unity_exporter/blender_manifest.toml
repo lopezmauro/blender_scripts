@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "unity_exporter"
+name = "Unity Rig & Animation Exporter"
+version = "1.0.0"
+tagline: "Exports base meshes and NLA animation to Unity.",
+maintainer = "Mauro Lopez Gimenez"
+type = "add-on"
+
+# Supported Blender versions
+blender_version_min = "5.1.0"
+
+# Where tools appear in the interface
+tags = ["Import-Export"]
