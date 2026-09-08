@@ -229,87 +229,6 @@ class RIG_OT_snap_ik_to_fk(bpy.types.Operator):
 
         force_viewport_update(context)
         return {'FINISHED'}
-# ==============================================================================
-# 2. EXPORT PIPELINE
-# ==============================================================================
-
-class RIG_OT_bake_and_export_unity(bpy.types.Operator):
-    """Bakes deforming bones and exports an FBX cleanly for Unity."""
-    bl_idname = "rig.bake_and_export_unity"
-    bl_label = "Export to Unity (DEF only)"
-
-    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
-
-    def execute(self, context):
-        obj = context.active_object
-        if not obj or obj.type != 'ARMATURE':
-            self.report({'ERROR'}, "Active object is not an armature.")
-            return {'CANCELLED'}
-
-        bpy.ops.ed.undo_push(message="Pre-Export State")
-
-        # Select meshes and armature
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT')
-        obj.select_set(True)
-        for child in obj.children:
-            if child.type == 'MESH':
-                child.select_set(True)
-
-        context.view_layer.objects.active = obj
-        bpy.ops.object.mode_set(mode='POSE')
-        bpy.ops.pose.select_all(action='DESELECT')
-
-        # Select all true deforming bones via native flag and name pattern
-        deform_count = 0
-        for pbone in obj.pose.bones:
-            is_deform = pbone.bone.use_deform or "_def." in pbone.name.lower() or pbone.name.startswith("DEF")
-            if is_deform:
-                if hasattr(pbone.bone, "select_set"):
-                    pbone.bone.select_set(True)
-                else:
-                    pbone.bone.select = True
-                deform_count += 1
-
-        if deform_count == 0:
-            self.report({'ERROR'}, "No deforming bones found on armature.")
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.ed.undo()
-            return {'CANCELLED'}
-
-        # Bake pose visual transformations
-        bpy.ops.nla.bake(
-            frame_start=context.scene.frame_start,
-            frame_end=context.scene.frame_end,
-            step=1,
-            only_selected=True,
-            visual_keying=True,
-            clear_constraints=False,
-            clear_parents=False,
-            use_current_action=True,
-            bake_types={'POSE'}
-        )
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        bpy.ops.export_scene.fbx(
-            filepath=self.filepath,
-            use_selection=True,
-            object_types={'ARMATURE', 'MESH'},
-            use_armature_deform_only=True,
-            add_leaf_bones=False,
-            bake_anim=True,
-            bake_anim_use_nla_strips=False,
-            bake_anim_use_all_actions=False,
-            bake_anim_force_startend_keying=True,
-            bake_anim_step=1.0,
-            bake_anim_simplify_factor=0.0
-        )
-
-        bpy.ops.ed.undo()
-        self.report({'INFO'}, f"Exported {deform_count} deform bones to {self.filepath}")
-        return {'FINISHED'}
-
 
 # ==============================================================================
 # 3. SIDEBAR PANEL
@@ -450,16 +369,11 @@ class RIG_PT_rig_tools(bpy.types.Panel):
 
         layout.separator()
 
-        # 4. Pipeline Export
-        layout.label(text="Pipeline:", icon='EXPORT')
-        layout.operator("rig.bake_and_export_unity", text="Export to Unity")
-
 
 classes = (
     RIG_OT_switch_space,
     RIG_OT_snap_fk_to_ik,
     RIG_OT_snap_ik_to_fk,
-    RIG_OT_bake_and_export_unity,
     RIG_PT_rig_tools,
 )
 

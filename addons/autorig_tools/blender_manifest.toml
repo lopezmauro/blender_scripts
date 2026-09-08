@@ -4,7 +4,7 @@ id = "custom_autorig_tools"
 name = "AutoRig Tools & Runtime"
 version = "1.0.0"
 tagline = "Modular autorig generation and animation runtime tools"
-maintainer = "Your Name"
+maintainer = "Mauro Lopez Gimenez"
 type = "add-on"
 
 # Supported Blender versions
