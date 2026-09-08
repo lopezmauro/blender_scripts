@@ -4,7 +4,7 @@ id = "custom_fbx_retargeter"
 name = "Custom FBX Retargeter"
 version = "1.0.0"
 tagline: "Custom addon for FBX retargeting",
-maintainer = "Your Name"
+maintainer = "Mauro Lopez Gimenez"
 type = "add-on"
 
 # Supported Blender versions

@@ -497,7 +497,30 @@ class RETARGET_OT_ClearMappings(bpy.types.Operator):
         context.scene.retarget_settings.mappings.clear()
         return {'FINISHED'}
 
-def draw_mapping_columns(layout, settings, is_header=False, item=None, tgt_obj=None):
+
+class RETARGET_OT_AssignBoneToField(bpy.types.Operator):
+    """Assign active viewport bone directly to this row"""
+    bl_idname = "retarget.assign_bone_to_field"
+    bl_label = "Assign Selected Bone"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    index: bpy.props.IntProperty()
+    field_name: bpy.props.StringProperty(default="target_bone")
+
+    def execute(self, context):
+        settings = context.scene.retarget_settings
+        if not (0 <= self.index < len(settings.mappings)):
+            return {'CANCELLED'}
+
+        active_pbone = context.active_pose_bone
+        if not active_pbone:
+            self.report({'WARNING'}, "Select a bone in Pose Mode first.")
+            return {'CANCELLED'}
+
+        setattr(settings.mappings[self.index], self.field_name, active_pbone.name)
+        return {'FINISHED'}
+
+def draw_mapping_columns(layout, settings, is_header=False, item=None, src_obj=None, tgt_obj=None, index=None):
     """Draws four aligned table columns using relative percentage splits."""
     w_src = min(max(settings.col_src_width, 0.15), 0.55)
     w_tgt = min(max(settings.col_tgt_width, 0.15), 0.55)
@@ -529,11 +552,31 @@ def draw_mapping_columns(layout, settings, is_header=False, item=None, tgt_obj=N
         col_trans.label(text="Pos")
         col_rot.label(text="Rot")
     else:
-        col_src.label(text=item.source_bone, icon='BONE_DATA')
-        if tgt_obj and tgt_obj.type == 'ARMATURE':
-            col_tgt.prop_search(item, "target_bone", tgt_obj.data, "bones", text="")
+        # Source column with inline picker
+        row_src = col_src.row(align=True)
+        if src_obj and src_obj.type == 'ARMATURE':
+            row_src.prop_search(item, "source_bone", src_obj.data, "bones", text="")
         else:
-            col_tgt.prop(item, "target_bone", text="")
+            row_src.prop(item, "source_bone", text="")
+
+        if index is not None:
+            op_src = row_src.operator("retarget.assign_bone_to_field", text="", icon='EYEDROPPER')
+            if op_src:
+                op_src.index = index
+                op_src.field_name = "source_bone"
+
+        # Target column with inline picker
+        row_tgt = col_tgt.row(align=True)
+        if tgt_obj and tgt_obj.type == 'ARMATURE':
+            row_tgt.prop_search(item, "target_bone", tgt_obj.data, "bones", text="")
+        else:
+            row_tgt.prop(item, "target_bone", text="")
+
+        if index is not None:
+            op_tgt = row_tgt.operator("retarget.assign_bone_to_field", text="", icon='EYEDROPPER')
+            if op_tgt:
+                op_tgt.index = index
+                op_tgt.field_name = "target_bone"
         col_trans.prop(item, "trans_space", text="")
         col_rot.prop(item, "rot_space", text="")
 
@@ -541,12 +584,19 @@ def draw_mapping_columns(layout, settings, is_header=False, item=None, tgt_obj=N
 class RETARGET_UL_BoneMappingList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         settings = context.scene.retarget_settings
+        src_obj = settings.source_armature
         tgt_obj = settings.target_armature
 
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row(align=True)
-            draw_mapping_columns(row, settings, is_header=False, item=item, tgt_obj=tgt_obj)
-
+            draw_mapping_columns(
+                row, settings, 
+                is_header=False, 
+                item=item, 
+                src_obj=src_obj, 
+                tgt_obj=tgt_obj,
+                index=index
+            )
 
 class RETARGET_PT_MainPanel(bpy.types.Panel):
     bl_label = "FBX Retargeter"
@@ -726,6 +776,7 @@ classes = (
     RETARGET_OT_ImportAndRetargetFBX,
     RETARGET_OT_PopulateSourceBones,
     RETARGET_OT_AssignSelectedTarget,
+    RETARGET_OT_AssignBoneToField,
     RETARGET_OT_MirrorAssignments,
     RETARGET_OT_ClearMappings,
     RETARGET_UL_BoneMappingList,
