@@ -18,12 +18,10 @@ def get_deform_bones(armature_obj):
 
 def set_bone_selection(pbone, state: bool = True):
     """Safely selects or deselects a pose bone across Blender versions."""
-    # Blender 4.0+ stores pose selection on PoseBone
     if hasattr(pbone, "select"):
         pbone.select = state
     elif hasattr(pbone, "select_set"):
         pbone.select_set(state)
-    # Blender 3.6 and older stored pose selection on Bone
     elif hasattr(pbone.bone, "select"):
         pbone.bone.select = state
     elif hasattr(pbone.bone, "select_set"):
@@ -71,7 +69,7 @@ class UNITY_OT_export_base_mesh(bpy.types.Operator):
 
         context.view_layer.objects.active = obj
 
-        # 3. Export base model
+        # 3. Export base model with unified scale
         bpy.ops.export_scene.fbx(
             filepath=self.filepath,
             use_selection=True,
@@ -128,31 +126,51 @@ class UNITY_OT_export_nla_animations(bpy.types.Operator):
         prev_mode = armature.mode
         prev_active_action = anim_data.action
 
-        # Collect unmuted tracks
-        valid_tracks = [t for t in anim_data.nla_tracks if not t.mute]
-        solo_states = {t: t.is_solo for t in anim_data.nla_tracks}
+        # Cache original mute and solo states for full restoration
+        track_mute_cache = {track: track.mute for track in anim_data.nla_tracks}
+        strip_mute_cache = {
+            strip: strip.mute
+            for track in anim_data.nla_tracks
+            for strip in track.strips
+        }
 
+        # Clear any solo settings that might conflict with muting
+        for track in anim_data.nla_tracks:
+            track.is_solo = False
+
+        # Only process tracks that were not muted originally
+        active_tracks = [t for t in anim_data.nla_tracks if not track_mute_cache[t]]
         exported_count = 0
 
         try:
-            for track in valid_tracks:
-                # Solo current track
-                for t in anim_data.nla_tracks:
-                    t.is_solo = (t == track)
+            for target_track in active_tracks:
+                for target_strip in target_track.strips:
+                    # Skip strips that were originally muted
+                    if strip_mute_cache[target_strip]:
+                        continue
 
-                for strip in track.strips:
-                    start_frame = int(strip.frame_start)
-                    end_frame = int(strip.frame_end)
-                    clip_name = strip.name.replace(" ", "_")
+                    # 1. Explicitly isolate track and strip via muting
+                    for track in anim_data.nla_tracks:
+                        track.mute = (track != target_track)
 
-                    # Clear active action to prevent it from overriding the solo NLA strip
+                    for strip in target_track.strips:
+                        strip.mute = (strip != target_strip)
+
+                    # 2. Detach any active action overriding the NLA stack
                     anim_data.action = None
 
-                    # Select deform bones
+                    # 3. Force dependency graph update to commit mute states
+                    context.view_layer.update()
+                    context.evaluated_depsgraph_get().update()
+
+                    start_frame = int(target_strip.frame_start)
+                    end_frame = int(target_strip.frame_end)
+                    clip_name = target_strip.name.replace(" ", "_")
+
+                    # 4. Select deforming bones and bake transforms
                     bpy.ops.object.mode_set(mode='POSE')
                     select_deform_bones_only(armature)
 
-                    # Bake visual transforms for the deform bones
                     bpy.ops.nla.bake(
                         frame_start=start_frame,
                         frame_end=end_frame,
@@ -167,13 +185,12 @@ class UNITY_OT_export_nla_animations(bpy.types.Operator):
 
                     baked_action = anim_data.action
 
-                    # Select armature only (exclude meshes)
+                    # 5. Export armature only with FBX_SCALE_ALL
                     bpy.ops.object.mode_set(mode='OBJECT')
                     bpy.ops.object.select_all(action='DESELECT')
                     armature.select_set(True)
                     context.view_layer.objects.active = armature
 
-                    # Export FBX using Unity '@' convention
                     out_filename = f"{prefix}@{clip_name}.fbx"
                     out_path = os.path.join(export_dir, out_filename)
 
@@ -192,7 +209,7 @@ class UNITY_OT_export_nla_animations(bpy.types.Operator):
                         apply_scale_options='FBX_SCALE_ALL'
                     )
 
-                    # Cleanup temporary baked action
+                    # 6. Unlink and delete temporary baked action datablock
                     anim_data.action = None
                     if baked_action:
                         bpy.data.actions.remove(baked_action)
@@ -200,10 +217,16 @@ class UNITY_OT_export_nla_animations(bpy.types.Operator):
                     exported_count += 1
 
         finally:
-            # Restore NLA solo states and previous active action
-            for t, state in solo_states.items():
-                t.is_solo = state
+            # Restore all original track and strip mute states
+            for track, was_muted in track_mute_cache.items():
+                track.mute = was_muted
+
+            for strip, was_muted in strip_mute_cache.items():
+                strip.mute = was_muted
+
             anim_data.action = prev_active_action
+            context.view_layer.update()
+            context.evaluated_depsgraph_get().update()
             bpy.ops.object.mode_set(mode=prev_mode)
 
         self.report({'INFO'}, f"Exported {exported_count} animation clips to {export_dir}")
