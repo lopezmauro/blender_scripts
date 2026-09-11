@@ -77,7 +77,8 @@ class UNITY_OT_export_base_mesh(bpy.types.Operator):
             use_armature_deform_only=True,
             add_leaf_bones=False,
             bake_anim=False,
-            apply_scale_options='FBX_SCALE_ALL'
+            apply_scale_options='FBX_SCALE_ALL',
+            colors_type='LINEAR'
         )
 
         # 4. Restore initial state

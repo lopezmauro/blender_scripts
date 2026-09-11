@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "curve_flow_map_generator"
+"name": "Curve Flow Map Generator",
+version = "1.0.0"
+tagline: "Generates flow maps from grooming curves"
+maintainer = "Mauro Lopez Gimenez"
+type = "add-on"
+
+# Supported Blender versions
+blender_version_min = "5.1.0"
+
+# Where tools appear in the interface
+tags = ["Pipeline"]
