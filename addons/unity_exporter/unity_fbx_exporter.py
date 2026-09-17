@@ -142,7 +142,9 @@ class UNITY_OT_export_nla_animations(bpy.types.Operator):
         # Only process tracks that were not muted originally
         active_tracks = [t for t in anim_data.nla_tracks if not track_mute_cache[t]]
         exported_count = 0
-
+        # Cache scene frame range alongside mode and action
+        prev_scene_start = context.scene.frame_start
+        prev_scene_end = context.scene.frame_end
         try:
             for target_track in active_tracks:
                 for target_strip in target_track.strips:
@@ -167,7 +169,9 @@ class UNITY_OT_export_nla_animations(bpy.types.Operator):
                     start_frame = int(target_strip.frame_start)
                     end_frame = int(target_strip.frame_end)
                     clip_name = target_strip.name.replace(" ", "_")
-
+                    context.scene.frame_start = start_frame
+                    context.scene.frame_end = end_frame
+                    context.scene.frame_set(start_frame)
                     # 4. Select deforming bones and bake transforms
                     bpy.ops.object.mode_set(mode='POSE')
                     select_deform_bones_only(armature)
